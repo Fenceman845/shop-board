@@ -1,0 +1,940 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Yaboo Shop Board</title>
+<meta name="description" content="Live production board for Yaboo Fence Co.'s PVC, welding, wood, yard and mechanic shops.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Barlow:wght@400;500;600&display=swap">
+<style>
+/* Layout: sticky top bar (wordmark · board notice · clock · Edit / TV), a tab rail of the five shops,
+   then either the all-shops overview (five columns on a TV, stacked on a phone) or one shop's crew cards.
+   Changes are made in a bottom sheet. Dark-first, because the office TV is the main screen. */
+:root{
+  --bg:#14171c; --panel:#1b1f26; --panel-2:#242932; --line:#2f3641; --line-2:#3e4756;
+  --fg:#ece9e2; --muted:#a0a7b1; --faint:#6f7784;
+  --accent:#ff8a1f; --accent-fg:#1a1004;
+  --ok:#4cc063; --warn:#ecb83f; --bad:#f4625a;
+  --ok-soft:rgba(76,192,99,.18); --warn-soft:rgba(236,184,63,.2); --bad-soft:rgba(244,98,90,.2);
+  --shop-pvc:#d9dfe6; --shop-weld:#ff8a1f; --shop-wood:#cf9052; --shop-yard:#6fc47a; --shop-mech:#63a8ec;
+  --display:"Barlow Condensed","Arial Narrow",Arial,sans-serif;
+  --body:Barlow,"Helvetica Neue",Arial,sans-serif;
+  --shadow:0 14px 44px rgba(0,0,0,.5);
+  --backdrop:rgba(5,7,10,.62);
+  color-scheme:dark;
+}
+@media (prefers-color-scheme: light){
+  :root:not([data-theme="dark"]){
+    --bg:#f2f0eb; --panel:#ffffff; --panel-2:#f5f3ee; --line:#dcd8cf; --line-2:#c6c1b6;
+    --fg:#1b1e24; --muted:#5b616a; --faint:#8b919a;
+    --accent:#e06f0a; --accent-fg:#ffffff;
+    --ok:#1e8f3a; --warn:#b0761a; --bad:#c9352d;
+    --ok-soft:rgba(30,143,58,.14); --warn-soft:rgba(176,118,26,.16); --bad-soft:rgba(201,53,45,.14);
+    --shop-pvc:#8a939c; --shop-weld:#e06f0a; --shop-wood:#a86d32; --shop-yard:#2e9a45; --shop-mech:#2e7fd2;
+    --shadow:0 14px 44px rgba(20,22,30,.2);
+    --backdrop:rgba(30,32,40,.45);
+    color-scheme:light;
+  }
+}
+:root[data-theme="light"]{
+  --bg:#f2f0eb; --panel:#ffffff; --panel-2:#f5f3ee; --line:#dcd8cf; --line-2:#c6c1b6;
+  --fg:#1b1e24; --muted:#5b616a; --faint:#8b919a;
+  --accent:#e06f0a; --accent-fg:#ffffff;
+  --ok:#1e8f3a; --warn:#b0761a; --bad:#c9352d;
+  --ok-soft:rgba(30,143,58,.14); --warn-soft:rgba(176,118,26,.16); --bad-soft:rgba(201,53,45,.14);
+  --shop-pvc:#8a939c; --shop-weld:#e06f0a; --shop-wood:#a86d32; --shop-yard:#2e9a45; --shop-mech:#2e7fd2;
+  --shadow:0 14px 44px rgba(20,22,30,.2);
+  --backdrop:rgba(30,32,40,.45);
+  color-scheme:light;
+}
+
+html{font-size:clamp(14px, 0.5vw + 11px, 21px)}
+body{background:var(--bg); color:var(--fg); font-family:var(--body); line-height:1.35; font-size:1rem}
+*{box-sizing:border-box}
+.app{min-height:100%; display:flex; flex-direction:column; padding-inline:16px; padding-block:0 2rem; gap:0}
+h1,h2,h3,h4{text-wrap:balance}
+
+/* top bar */
+.top{position:sticky; top:env(safe-area-inset-top,0px); z-index:5; background:var(--bg); display:flex; align-items:center; gap:.6rem 1rem; padding-block:.7rem; border-bottom:1px solid var(--line); flex-wrap:wrap}
+.brand{font-family:var(--display); font-weight:700; font-size:1.7rem; letter-spacing:.05em; text-transform:uppercase; line-height:1; white-space:nowrap}
+.brand b{color:var(--accent); font-weight:700}
+.notice{flex:1 1 100%; order:3; min-width:0; color:var(--warn); font-weight:600; display:flex; align-items:center; gap:.5rem}
+.notice .lbl{font-size:.7rem; letter-spacing:.12em; text-transform:uppercase; color:var(--muted); flex:none}
+.notice .txt{overflow-wrap:anywhere}
+.clock{margin-left:auto; text-align:right; font-variant-numeric:tabular-nums; line-height:1.15; white-space:nowrap}
+.clock .d{font-size:.75rem; text-transform:uppercase; letter-spacing:.1em; color:var(--muted)}
+.clock .t{font-family:var(--display); font-size:1.5rem; font-weight:600}
+.ctrl{display:flex; gap:.5rem; align-items:center}
+@media (min-width:900px){ .notice{flex:1 1 auto; order:0} .clock{margin-left:0} }
+@media (max-width:520px){ .brand{font-size:1.35rem} .clock .t{font-size:1.25rem} .ctrl{flex-wrap:wrap} }
+
+/* tabs */
+.tabs{display:flex; gap:.3rem; overflow-x:auto; padding-block:.7rem; scrollbar-width:none; -webkit-overflow-scrolling:touch}
+.tabs::-webkit-scrollbar{display:none}
+.tab{font-family:var(--display); font-weight:700; text-transform:uppercase; letter-spacing:.06em; font-size:1.1rem; padding:.4em .85em; border:1px solid transparent; border-radius:5px; background:none; color:var(--muted); cursor:pointer; white-space:nowrap; display:flex; gap:.5em; align-items:center; line-height:1}
+.tab .sw{width:.6em; height:.6em; border-radius:2px; background:var(--shop,var(--muted)); flex:none}
+.tab .n{font-family:var(--body); font-weight:600; font-size:.72em; color:var(--muted); background:var(--panel-2); padding:.15em .5em; border-radius:99px; font-variant-numeric:tabular-nums}
+.tab[aria-selected="true"]{color:var(--fg); background:var(--panel); border-color:var(--line-2)}
+.tab[aria-selected="true"] .n{background:var(--line-2)}
+
+main{flex:1; min-width:0}
+
+/* buttons */
+.btn{font:inherit; font-weight:600; padding:.5em .9em; border-radius:6px; border:1px solid var(--line-2); background:var(--panel-2); color:var(--fg); cursor:pointer; white-space:nowrap; line-height:1.2}
+.btn:hover{border-color:var(--muted)}
+.btn.pri{background:var(--accent); color:var(--accent-fg); border-color:transparent}
+.btn.danger{color:var(--bad); border-color:var(--bad); background:transparent}
+.btn.sm{padding:.32em .65em; font-size:.85em}
+.btn.on{background:var(--accent); color:var(--accent-fg); border-color:transparent}
+.btn:disabled{opacity:.5; cursor:default}
+.btn:focus-visible,.tab:focus-visible,.ovh:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
+body:not(.editing) .ed{display:none !important}
+body.tv .ed, body.tv .ctrl-edit{display:none !important}
+.acts{display:flex; gap:.5rem; flex-wrap:wrap; align-items:center}
+.spacer{flex:1}
+
+/* shared bits */
+.sw{display:inline-block; width:.75rem; height:.75rem; border-radius:2px; background:var(--shop,var(--muted)); flex:none}
+.sw.big{width:1.1rem; height:1.1rem; border-radius:3px}
+.quiet{color:var(--faint); font-size:.92em}
+.note{color:var(--muted); font-size:.9em; margin:0; border-left:2px solid var(--line-2); padding-left:.6em}
+.chip{display:inline-flex; align-items:center; gap:.4em; font-size:.85em; font-weight:500; padding:.2em .6em; border-radius:99px; background:var(--panel-2); border:1px solid var(--line); white-space:nowrap; max-width:100%}
+.chip .dot{width:.55em; height:.55em; border-radius:50%; background:var(--ok); flex:none}
+.chip.service{background:var(--warn-soft); border-color:transparent; color:var(--warn)} .chip.service .dot{background:var(--warn)}
+.chip.down{background:var(--bad-soft); border-color:transparent; color:var(--bad)} .chip.down .dot{background:var(--bad)}
+.chip .chipst{font-weight:600; text-transform:uppercase; font-size:.78em; letter-spacing:.06em}
+body.editing .chip.ed-click{cursor:pointer}
+.due{font-size:.78em; font-weight:600; padding:.15em .55em; border-radius:99px; background:var(--line); color:var(--fg); white-space:nowrap; font-variant-numeric:tabular-nums; justify-self:end}
+.due.warn{background:var(--warn-soft); color:var(--warn)}
+.due.bad{background:var(--bad-soft); color:var(--bad)}
+.due.ok{background:var(--ok-soft); color:var(--ok)}
+.eqrow{display:flex; gap:.45rem; flex-wrap:wrap; align-items:center}
+.eqlbl{font-size:.7rem; text-transform:uppercase; letter-spacing:.12em; color:var(--muted); margin-right:.2rem}
+.sect{font-family:var(--display); font-size:1.5rem; text-transform:uppercase; letter-spacing:.03em; margin:0; line-height:1}
+
+/* overview */
+.ov{display:grid; gap:1rem; grid-template-columns:1fr}
+@media (min-width:620px){ .ov{grid-template-columns:1fr 1fr} .ov > :last-child:nth-child(odd){grid-column:1/-1} }
+@media (min-width:1120px){ .ov{grid-template-columns:repeat(5,minmax(0,1fr))} .ov > :last-child:nth-child(odd){grid-column:auto} }
+.ovc{background:var(--panel); border:1px solid var(--line); border-radius:6px; padding:.85rem .95rem 1rem; display:flex; flex-direction:column; gap:.7rem; min-width:0}
+.ovh{display:flex; align-items:center; gap:.55rem; background:none; border:0; padding:0; color:inherit; font:inherit; cursor:pointer; text-align:left; width:100%; border-radius:4px}
+.ovh h2{font-family:var(--display); font-size:1.5rem; text-transform:uppercase; margin:0; line-height:1; letter-spacing:.03em; flex:1; min-width:0}
+.ovstat{font-size:.8rem; color:var(--muted); white-space:nowrap; font-variant-numeric:tabular-nums}
+.ovcrew{display:flex; flex-direction:column; gap:.3rem; padding-top:.55rem; border-top:1px solid var(--line)}
+.ovcn{display:flex; align-items:baseline; gap:.5rem; flex-wrap:wrap}
+.ovcn .nm{font-family:var(--display); font-weight:600; font-size:1.15rem; text-transform:uppercase; letter-spacing:.03em}
+.ovcn .lead{color:var(--muted); font-size:.85em}
+.ovj{display:grid; grid-template-columns:minmax(0,1fr) auto; gap:.1rem .5rem; align-items:start; padding:.35rem .5rem; background:var(--panel-2); border-radius:4px}
+.ovj .p{font-weight:600; overflow-wrap:anywhere}
+.ovj .i{color:var(--muted); font-size:.9em; grid-column:1; overflow-wrap:anywhere}
+.ovj.hold{opacity:.7}
+.ovnext{display:flex; flex-direction:column; gap:.3rem; padding-top:.55rem; border-top:1px solid var(--line)}
+.ovnext h4, .ovyard h4, .lcol h4, .sec h4{font-size:.7rem; text-transform:uppercase; letter-spacing:.13em; color:var(--muted); margin:0}
+.ovyard{display:flex; flex-direction:column; gap:.3rem; padding-top:.55rem; border-top:1px solid var(--line)}
+
+/* shop view */
+.sh{display:flex; flex-direction:column; gap:1rem}
+.shh{display:flex; align-items:center; gap:.7rem 1rem; flex-wrap:wrap}
+.shh h2{font-family:var(--display); font-size:2.4rem; text-transform:uppercase; margin:0; line-height:1; letter-spacing:.03em}
+.stats{display:flex; gap:.5rem; flex-wrap:wrap}
+.stat{display:flex; flex-direction:column; align-items:center; padding:.3rem .8rem; background:var(--panel); border:1px solid var(--line); border-radius:6px; min-width:4.6rem}
+.stat b{font-family:var(--display); font-size:1.8rem; line-height:1; font-weight:700; font-variant-numeric:tabular-nums}
+.stat span{font-size:.68rem; text-transform:uppercase; letter-spacing:.12em; color:var(--muted)}
+.stat.warn b{color:var(--warn)} .stat.bad b{color:var(--bad)}
+.shh .acts{margin-left:auto}
+.crews{display:grid; gap:1rem; grid-template-columns:repeat(auto-fill,minmax(min(100%,310px),1fr))}
+.crew{background:var(--panel); border:1px solid var(--line); border-radius:6px; padding:.9rem 1rem 1rem; display:flex; flex-direction:column; gap:.55rem; min-width:0}
+.crewh{display:flex; align-items:flex-start; gap:.6rem}
+.crewh > div{flex:1; min-width:0}
+.crew h3{font-family:var(--display); font-size:1.55rem; text-transform:uppercase; margin:0; letter-spacing:.03em; line-height:1.05}
+.crew .who{color:var(--muted); font-size:.9rem; overflow-wrap:anywhere}
+.crew.un h3{color:var(--muted)}
+.sec{display:flex; flex-direction:column; gap:.35rem}
+.sec h4{margin-top:.25rem}
+.job{display:grid; grid-template-columns:minmax(0,1fr) auto; gap:.12rem .6rem; padding:.5rem .65rem; border-radius:4px; background:var(--panel-2); align-items:start; border-left:3px solid transparent}
+.job.active{border-left-color:var(--ok)}
+.job.queued{border-left-color:var(--line-2)}
+.job.hold{border-left-color:var(--warn); opacity:.8}
+.job.done{border-left-color:var(--faint); opacity:.75}
+.job .p{font-weight:600; overflow-wrap:anywhere}
+.job .i{color:var(--muted); font-size:.92em; grid-column:1; overflow-wrap:anywhere}
+.job .n{color:var(--faint); font-size:.86em; grid-column:1/-1; overflow-wrap:anywhere}
+.job .jacts{grid-column:1/-1; display:flex; gap:.4rem; flex-wrap:wrap; padding-top:.25rem}
+.empty{border:1px dashed var(--line-2); border-radius:8px; padding:2rem 1.2rem; text-align:center; color:var(--muted); display:flex; flex-direction:column; gap:.7rem; align-items:center}
+.empty h3{font-family:var(--display); font-size:1.9rem; margin:0; color:var(--fg); text-transform:uppercase; letter-spacing:.03em; line-height:1}
+.empty p{margin:0; max-width:34em}
+.logi{display:grid; gap:1rem; grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr))}
+.lcol{background:var(--panel); border:1px solid var(--line); border-radius:6px; padding:.85rem .95rem 1rem; display:flex; flex-direction:column; gap:.4rem; min-width:0}
+.yrow{display:grid; grid-template-columns:minmax(0,1fr) auto; gap:.12rem .6rem; padding:.45rem .6rem; border-radius:4px; background:var(--panel-2); align-items:start}
+.yrow .p{font-weight:600; overflow-wrap:anywhere}
+.yrow .i{color:var(--muted); font-size:.92em; grid-column:1; overflow-wrap:anywhere}
+.yrow .n{color:var(--faint); font-size:.86em; grid-column:1/-1}
+.yrow .jacts{grid-column:1/-1; display:flex; gap:.4rem; flex-wrap:wrap; padding-top:.25rem}
+.yrow.done{opacity:.7}
+details.fin{border-top:1px solid var(--line); padding-top:.6rem}
+details.fin summary{cursor:pointer; color:var(--muted); font-weight:600}
+details.fin .finlist{display:grid; gap:.5rem; grid-template-columns:repeat(auto-fill,minmax(min(100%,310px),1fr)); padding-top:.6rem}
+.msg{padding:1.2rem 1rem; color:var(--muted); text-align:center}
+
+/* sheet */
+.sheet-bd{position:fixed; inset:0; background:var(--backdrop); display:flex; align-items:flex-end; justify-content:center; z-index:20; padding:0}
+.sheet{background:var(--panel); width:100%; max-width:580px; max-height:90vh; overflow:auto; border-radius:12px 12px 0 0; padding:1rem 1rem calc(1.2rem + env(safe-area-inset-bottom,0px)); display:flex; flex-direction:column; gap:.9rem; box-shadow:var(--shadow); border:1px solid var(--line)}
+@media (min-width:700px){ .sheet-bd{align-items:center; padding:1rem} .sheet{border-radius:10px; padding-bottom:1rem} }
+.sheet h3{font-family:var(--display); font-size:1.7rem; margin:0; text-transform:uppercase; letter-spacing:.03em; line-height:1}
+.form{display:grid; grid-template-columns:1fr 1fr; gap:.8rem}
+.f{display:flex; flex-direction:column; gap:.3rem; grid-column:1/-1; min-width:0}
+.f.half{grid-column:auto}
+.f label{font-size:.72rem; text-transform:uppercase; letter-spacing:.1em; color:var(--muted)}
+.f input,.f select,.f textarea{font:inherit; padding:.55em .7em; border:1px solid var(--line-2); border-radius:6px; background:var(--panel-2); color:var(--fg); min-width:0; width:100%}
+.f input:focus-visible,.f select:focus-visible,.f textarea:focus-visible{outline:2px solid var(--accent); outline-offset:1px}
+.f textarea{resize:vertical}
+.sheet .acts{justify-content:flex-end}
+
+.toast{position:fixed; left:50%; bottom:calc(1.2rem + env(safe-area-inset-bottom,0px)); transform:translateX(-50%); background:var(--fg); color:var(--bg); padding:.6em 1em; border-radius:8px; z-index:30; font-weight:500; max-width:calc(100% - 32px); text-align:center; box-shadow:var(--shadow)}
+.foot{padding-top:1.2rem; color:var(--faint); font-size:.82rem; display:flex; gap:1rem; flex-wrap:wrap; justify-content:space-between}
+@media (prefers-reduced-motion: no-preference){ .sheet{animation:up .18s ease-out} @keyframes up{from{transform:translateY(12px);opacity:0}to{transform:none;opacity:1}} }
+
+/* --- standalone additions --- */
+body{margin:0}
+img{max-width:100%}
+[hidden]{display:none !important}
+.btn.ghost{background:transparent}
+.signin-note{color:var(--muted); font-size:.9em; margin:0}
+.f .hint{color:var(--faint); font-size:.8em}
+.setup{max-width:44rem; margin:2rem auto; display:flex; flex-direction:column; gap:.8rem; color:var(--muted)}
+.setup h2{font-family:var(--display); font-size:2rem; text-transform:uppercase; color:var(--fg); margin:0; letter-spacing:.03em}
+.setup code{background:var(--panel-2); border:1px solid var(--line); border-radius:4px; padding:.1em .35em; color:var(--fg); font-size:.9em}
+.setup ol{margin:0; padding-left:1.3em; display:flex; flex-direction:column; gap:.4rem}
+.offline{font-size:.75rem; color:var(--warn); text-transform:uppercase; letter-spacing:.1em}
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="top">
+    <div class="brand">Yaboo <b>Shop Board</b></div>
+    <div class="notice" id="notice" hidden><span class="lbl">Notice</span><span class="txt" id="noticeTxt"></span><button class="btn sm ed" id="btnNotice" type="button">Edit notice</button></div>
+    <div class="clock" id="clock"><div class="d" id="clockD"></div><div class="t" id="clockT"></div></div>
+    <div class="ctrl">
+      <span class="offline" id="offline" hidden>Offline · showing last data</span>
+      <button class="btn sm ed" id="btnBoard" type="button">Board settings</button>
+      <button class="btn sm ghost" id="btnTheme" type="button" title="Theme">Theme: Auto</button>
+      <button class="btn sm ctrl-edit" id="btnEdit" type="button">Edit</button>
+      <button class="btn sm" id="btnTV" type="button">TV mode</button>
+    </div>
+  </header>
+  <nav class="tabs" id="tabs" role="tablist" aria-label="Shops"></nav>
+  <main id="main"><div class="msg">Connecting to the board…</div></main>
+  <footer class="foot" id="foot"></footer>
+</div>
+<div class="sheet-bd" id="sheetbd" hidden><div class="sheet" id="sheet" role="dialog" aria-modal="true"></div></div>
+
+<script type="module">
+/* =========================================================================
+   SETUP — the only two things to edit.
+   1) Paste the firebaseConfig from Firebase console → Project settings → Your apps.
+   2) EDITOR_EMAIL must match the user you created under Authentication → Users.
+   ========================================================================= */
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyCgsmliJaB6UBIFw6Y9krUrNcglLKk7DpQ",
+  authDomain: "yaboo-shop-board.firebaseapp.com",
+  projectId: "yaboo-shop-board",
+  storageBucket: "yaboo-shop-board.firebasestorage.app",
+  messagingSenderId: "206131007766",
+  appId: "1:206131007766:web:6100903417a3ec010f0037"
+};
+const EDITOR_EMAIL = "joejr@yaboofence.com";
+/* ========================================================================= */
+
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js";
+import { getFirestore, initializeFirestore, persistentLocalCache, persistentMultipleTabManager,
+         collection, doc, onSnapshot, addDoc, setDoc, updateDoc, deleteDoc}
+  from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
+import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged }
+  from "https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js";
+
+const SHOPS=[
+  {id:'pvc',  name:'PVC Shop'},
+  {id:'weld', name:'Welding Shop'},
+  {id:'wood', name:'Wood Shop'},
+  {id:'yard', name:'Yard'},
+  {id:'mech', name:'Mechanic Shop'}
+];
+const SHOP_BY=Object.fromEntries(SHOPS.map(s=>[s.id,s]));
+const TABS=['all',...SHOPS.map(s=>s.id)];
+const STAGES={active:'Working now',queued:'Coming up',hold:'On hold',done:'Finished'};
+const EQ_STATUS={ok:'Running',service:'Needs service',down:'Down'};
+const YARD={
+  in:{label:'Deliveries in',open:'Expected',done:'Received',act:'Mark received'},
+  out:{label:'Loads out',open:'To load',done:'Loaded out',act:'Mark loaded'},
+  staged:{label:'Staged material',open:'Staged',done:'Pulled',act:'Mark pulled'}
+};
+const DOW=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+const MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+const S={
+  crews:[],jobs:[],equipment:[],yard:[],board:{rotateSec:20,notice:''},
+  loaded:false, setupNeeded:false, db:null, auth:null, canWrite:false, name:'',
+  editing:false, tab:'all', tv:false, busy:new Set(), rotateTimer:null, lock:null, offline:false
+};
+
+const $=id=>document.getElementById(id);
+function h(tag,attrs,...kids){
+  const el=document.createElement(tag);
+  if(attrs) for(const [k,v] of Object.entries(attrs)){
+    if(v==null||v===false) continue;
+    if(k==='class') el.className=v;
+    else if(k==='text') el.textContent=v;
+    else if(k.startsWith('on')) el.addEventListener(k.slice(2),v);
+    else if(k==='style') el.style.cssText=v;
+    else el.setAttribute(k,v===true?'':v);
+  }
+  for(const kid of kids.flat(Infinity)){
+    if(kid==null||kid===false) continue;
+    el.append(kid.nodeType?kid:document.createTextNode(String(kid)));
+  }
+  return el;
+}
+const ls={
+  get(k){ try{ return localStorage.getItem('ysb.'+k); }catch(e){ return null; } },
+  set(k,v){ try{ localStorage.setItem('ysb.'+k,v); }catch(e){} }
+};
+
+/* ---------- dates ---------- */
+function pad(n){ return String(n).padStart(2,'0'); }
+function todayStr(){ const d=new Date(); return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate()); }
+function parseDay(s){ if(!s||!/^\d{4}-\d{2}-\d{2}$/.test(s)) return null; const [y,m,d]=s.split('-').map(Number); return new Date(y,m-1,d); }
+function daysUntil(s){ const d=parseDay(s); if(!d) return null; return Math.round((d-parseDay(todayStr()))/86400000); }
+function fmtDay(s){ const d=parseDay(s); if(!d) return ''; return DOW[d.getDay()]+' '+(d.getMonth()+1)+'/'+d.getDate(); }
+function fmtTime(iso){ const d=new Date(iso); if(isNaN(d)) return ''; let hr=d.getHours(); const ap=hr>=12?'PM':'AM'; hr=hr%12||12; return hr+':'+pad(d.getMinutes())+' '+ap; }
+function fmtWhen(iso){ const d=new Date(iso); if(isNaN(d)) return ''; const t=fmtTime(iso); const same=d.toDateString()===new Date().toDateString(); return same?t:(DOW[d.getDay()]+' '+(d.getMonth()+1)+'/'+d.getDate()+' '+t); }
+function dueChip(j){
+  if(j.stage==='done'){ return j.doneAt?h('span',{class:'due ok',text:'Done '+fmtWhen(j.doneAt)}):null; }
+  if(!j.due) return null;
+  const n=daysUntil(j.due); let cls='due', txt;
+  if(n<0){ cls+=' bad'; txt='Overdue '+(-n)+(n===-1?' day':' days'); }
+  else if(n===0){ cls+=' warn'; txt='Due today'; }
+  else if(n===1){ cls+=' warn'; txt='Due tomorrow'; }
+  else if(n<=6){ txt='Due '+DOW[parseDay(j.due).getDay()]; }
+  else txt='Due '+fmtDay(j.due);
+  return h('span',{class:cls,text:txt});
+}
+function dateChip(s){
+  if(!s) return null; const n=daysUntil(s); let cls='due', txt;
+  if(n<0){ cls+=' bad'; txt=fmtDay(s); } else if(n===0){ cls+=' warn'; txt='Today'; } else if(n===1){ cls+=' warn'; txt='Tomorrow'; } else txt=fmtDay(s);
+  return h('span',{class:cls,text:txt});
+}
+
+/* ---------- selectors ---------- */
+function crewsFor(shop){ return S.crews.filter(c=>c.shop===shop).sort((a,b)=>(a.name||'').localeCompare(b.name||'')); }
+function jobSort(a,b){ const da=a.due||'9999',db2=b.due||'9999'; if(da!==db2) return da<db2?-1:1; return (a.createdAt||'')<(b.createdAt||'')?-1:1; }
+function jobsFor(shop,crewId,stage){ return S.jobs.filter(j=>j.shop===shop&&j.stage===stage&&(crewId===undefined||(j.crewId||'')===crewId)).sort(jobSort); }
+function recentDone(shop){ const cut=Date.now()-7*86400000; return S.jobs.filter(j=>j.shop===shop&&j.stage==='done'&&(!j.doneAt||new Date(j.doneAt).getTime()>cut)).sort((a,b)=>(b.doneAt||'')<(a.doneAt||'')?-1:1); }
+function eqFor(shop){ const rank={down:0,service:1,ok:2}; return S.equipment.filter(e=>e.shop===shop).sort((a,b)=>(rank[a.status]??3)-(rank[b.status]??3)||(a.name||'').localeCompare(b.name||'')); }
+function yardItems(kind,done){ return S.yard.filter(y=>y.kind===kind&&(done?y.status==='done':y.status!=='done')).sort((a,b)=>((a.date||'9999')<(b.date||'9999')?-1:(a.date||'9999')>(b.date||'9999')?1:0)); }
+
+/* ---------- render ---------- */
+let queued=false;
+function scheduleRender(){ if(queued) return; queued=true; requestAnimationFrame(()=>{ queued=false; render(); }); }
+function render(){
+  renderTabs();
+  const main=$('main');
+  if(S.setupNeeded){ main.replaceChildren(renderSetup()); renderNotice(); return; }
+  if(!S.loaded){ main.replaceChildren(h('div',{class:'msg',text:'Connecting to the board…'})); renderNotice(); return; }
+  main.replaceChildren(S.tab==='all'?renderOverview():renderShop(S.tab));
+  renderNotice();
+  renderFoot();
+}
+function renderSetup(){
+  return h('div',{class:'setup'},
+    h('h2',{text:'Board not connected yet'}),
+    h('p',{text:'This page needs its Firebase project details before it can show anything. Open index.html and, at the top of the script, replace the PASTE_ME values in FIREBASE_CONFIG with the config block from the Firebase console (Project settings → Your apps → Web app).'}),
+    h('p',{text:'The README next to this file walks through the whole setup: Firestore database, security rules, the editor account, and GitHub Pages.'}));
+}
+function renderTabs(){
+  const nav=$('tabs'); nav.replaceChildren();
+  for(const t of TABS){
+    const s=SHOP_BY[t];
+    const n=t==='all'?S.jobs.filter(j=>j.stage==='active').length:jobsFor(t,undefined,'active').length;
+    const b=h('button',{class:'tab',role:'tab','aria-selected':S.tab===t?'true':'false',type:'button',style:s?'--shop:var(--shop-'+t+')':'',onclick:()=>setTab(t)},
+      s?h('span',{class:'sw'}):null, s?s.name:'All shops', (S.loaded&&n)?h('span',{class:'n',text:String(n)}):null);
+    nav.append(b);
+  }
+  const sel=nav.querySelector('[aria-selected="true"]');
+  if(sel){ const l=sel.offsetLeft, r=l+sel.offsetWidth; if(l<nav.scrollLeft) nav.scrollLeft=l-8; else if(r>nav.scrollLeft+nav.clientWidth) nav.scrollLeft=r-nav.clientWidth+8; }
+}
+function renderNotice(){
+  const box=$('notice'), txt=S.board.notice||'';
+  $('noticeTxt').textContent=txt;
+  box.hidden=!(txt||S.editing);
+  $('btnNotice').textContent=txt?'Edit notice':'Add notice';
+}
+function stat(n,label,cls){ return h('div',{class:'stat'+(cls?' '+cls:'')},h('b',{text:String(n)}),h('span',{text:label})); }
+function eqChip(e,editable){
+  const c=h('span',{class:'chip '+(e.status||'ok'),title:e.note||''},h('span',{class:'dot'}),h('span',{text:e.name||''}),e.status!=='ok'?h('span',{class:'chipst',text:EQ_STATUS[e.status]||''}):null);
+  if(editable){ c.classList.add('ed-click'); c.addEventListener('click',()=>{ if(S.editing) openEq(e); }); }
+  return c;
+}
+
+function renderOverview(){
+  const anything=S.crews.length||S.jobs.length||S.equipment.length||S.yard.length;
+  if(!anything){
+    return h('div',{class:'empty'},
+      h('h3',{text:'The board is empty'}),
+      h('p',{text:'Turn on Edit, open a shop tab, and add its crews and the jobs they are on. Or load example data to see how the board lays out, then remove it.'}),
+      h('div',{class:'acts ed'},h('button',{class:'btn pri',type:'button',text:'Load example data',onclick:loadExamples})));
+  }
+  const grid=h('div',{class:'ov'});
+  for(const s of SHOPS){
+    const crews=crewsFor(s.id), now=jobsFor(s.id,undefined,'active'), next=jobsFor(s.id,undefined,'queued'), hold=jobsFor(s.id,undefined,'hold');
+    const eqBad=eqFor(s.id).filter(e=>e.status!=='ok');
+    const card=h('article',{class:'ovc',style:'--shop:var(--shop-'+s.id+')'});
+    card.append(h('button',{class:'ovh',type:'button',onclick:()=>setTab(s.id)},h('span',{class:'sw'}),h('h2',{text:s.name}),
+      h('span',{class:'ovstat',text:now.length+' now · '+next.length+' next'+(hold.length?' · '+hold.length+' hold':'')})));
+    if(eqBad.length) card.append(h('div',{class:'eqrow'},eqBad.map(e=>eqChip(e))));
+    if(!crews.length&&!now.length&&!next.length) card.append(h('div',{class:'quiet',text:'Nothing posted yet.'}));
+    for(const c of crews){
+      const cj=jobsFor(s.id,c.id,'active');
+      const blk=h('div',{class:'ovcrew'},h('div',{class:'ovcn'},h('span',{class:'nm',text:c.name||''}),c.lead?h('span',{class:'lead',text:c.lead}):null));
+      if(cj.length) cj.forEach(j=>blk.append(ovJob(j))); else blk.append(h('div',{class:'quiet',text:'Nothing on the floor'}));
+      card.append(blk);
+    }
+    const un=jobsFor(s.id,'','active');
+    if(un.length){ const blk=h('div',{class:'ovcrew'},h('div',{class:'ovcn'},h('span',{class:'nm',text:'Unassigned'}))); un.forEach(j=>blk.append(ovJob(j))); card.append(blk); }
+    if(next.length){
+      const blk=h('div',{class:'ovnext'},h('h4',{text:'Coming up'}));
+      next.slice(0,4).forEach(j=>blk.append(ovJob(j)));
+      if(next.length>4) blk.append(h('div',{class:'quiet',text:'+'+(next.length-4)+' more'}));
+      card.append(blk);
+    }
+    if(s.id==='yard'){
+      const soon=['in','out','staged'].flatMap(k=>yardItems(k,false).filter(y=>{ const n=daysUntil(y.date); return n==null||n<=1; }));
+      if(soon.length){
+        const blk=h('div',{class:'ovyard'},h('h4',{text:'Yard today'}));
+        soon.slice(0,5).forEach(y=>blk.append(h('div',{class:'ovj'},h('span',{class:'p',text:(YARD[y.kind]?YARD[y.kind].open+': ':'')+(y.project||y.desc||'')}),dateChip(y.date)||h('span'),y.project&&y.desc?h('span',{class:'i',text:y.desc}):null)));
+        card.append(blk);
+      }
+    }
+    grid.append(card);
+  }
+  return grid;
+}
+function ovJob(j){
+  const it=[j.item,j.qty?'× '+j.qty:''].filter(Boolean).join(' ');
+  return h('div',{class:'ovj '+(j.stage||'')},h('span',{class:'p',text:j.project||'(no project)'}),dueChip(j)||h('span'),it?h('span',{class:'i',text:it}):null);
+}
+
+function renderShop(id){
+  const s=SHOP_BY[id];
+  const wrap=h('section',{class:'sh',style:'--shop:var(--shop-'+id+')'});
+  const crews=crewsFor(id), now=jobsFor(id,undefined,'active'), next=jobsFor(id,undefined,'queued'), hold=jobsFor(id,undefined,'hold');
+  const eq=eqFor(id), down=eq.filter(e=>e.status!=='ok').length;
+  wrap.append(h('div',{class:'shh'},h('span',{class:'sw big'}),h('h2',{text:s.name}),
+    h('div',{class:'stats'},stat(now.length,'now'),stat(next.length,'next'),hold.length?stat(hold.length,'on hold','warn'):null,down?stat(down,'equip. flag','bad'):null),
+    h('div',{class:'acts ed'},
+      h('button',{class:'btn sm pri',type:'button',text:'+ Job',onclick:()=>openJob({shop:id})}),
+      h('button',{class:'btn sm',type:'button',text:'+ Crew',onclick:()=>openCrew({shop:id})}),
+      h('button',{class:'btn sm',type:'button',text:'+ Equipment',onclick:()=>openEq({shop:id})}),
+      id==='yard'?h('button',{class:'btn sm',type:'button',text:'+ Yard item',onclick:()=>openYard({})}):null)));
+  if(eq.length) wrap.append(h('div',{class:'eqrow'},h('span',{class:'eqlbl',text:'Equipment'}),eq.map(e=>eqChip(e,true))));
+
+  const anyJobs=S.jobs.some(j=>j.shop===id);
+  if(!crews.length&&!anyJobs){
+    wrap.append(h('div',{class:'empty'},h('h3',{text:'No crews posted for the '+s.name+' yet'}),
+      h('p',{text:'Turn on Edit, add a crew, then add the jobs it is on and what is coming up next.'}),
+      h('div',{class:'acts ed'},h('button',{class:'btn pri',type:'button',text:'+ Crew',onclick:()=>openCrew({shop:id})}),h('button',{class:'btn',type:'button',text:'+ Job',onclick:()=>openJob({shop:id})}))));
+  } else {
+    const grid=h('div',{class:'crews'});
+    crews.forEach(c=>grid.append(crewCard(c,id)));
+    const unA=jobsFor(id,'','active'), unQ=jobsFor(id,'','queued'), unH=jobsFor(id,'','hold');
+    if(unA.length||unQ.length||unH.length||!crews.length){
+      const card=h('article',{class:'crew un'},h('div',{class:'crewh'},h('div',{},h('h3',{text:'Unassigned'}),h('div',{class:'who',text:'Not yet given to a crew'}))));
+      card.append(section('Working now',unA,'—'));
+      card.append(section('Coming up',unQ,'Nothing queued'));
+      if(unH.length) card.append(section('On hold',unH));
+      grid.append(card);
+    }
+    wrap.append(grid);
+  }
+  if(id==='yard') wrap.append(renderLogistics());
+
+  const done=recentDone(id), ydone=id==='yard'?['in','out','staged'].flatMap(k=>yardItems(k,true)):[];
+  if(done.length||ydone.length){
+    const det=h('details',{class:'fin'},h('summary',{text:'Finished · last 7 days ('+(done.length+ydone.length)+')'}));
+    const list=h('div',{class:'finlist'});
+    done.forEach(j=>list.append(jobRow(j,true)));
+    ydone.forEach(y=>list.append(yardRow(y)));
+    det.append(list);
+    det.append(h('div',{class:'acts ed',style:'padding-top:.6rem'},h('button',{class:'btn sm danger',type:'button',text:'Clear finished for this shop',onclick:()=>clearFinished(id)})));
+    wrap.append(det);
+  }
+  return wrap;
+}
+function crewCard(c,shop){
+  const now=jobsFor(shop,c.id,'active'), next=jobsFor(shop,c.id,'queued'), hold=jobsFor(shop,c.id,'hold');
+  const who=[c.lead?c.lead+' (lead)':'',(c.members||[]).join(', ')].filter(Boolean).join(' · ');
+  const card=h('article',{class:'crew'});
+  card.append(h('div',{class:'crewh'},h('div',{},h('h3',{text:c.name||''}),who?h('div',{class:'who',text:who}):null),
+    h('button',{class:'btn sm ed',type:'button',text:'Edit crew',onclick:()=>openCrew(c)})));
+  card.append(section('Working now',now,'Nothing on the floor'));
+  card.append(section('Coming up',next,'Nothing queued'));
+  if(hold.length) card.append(section('On hold',hold));
+  if(c.note) card.append(h('p',{class:'note',text:c.note}));
+  card.append(h('div',{class:'acts ed'},h('button',{class:'btn sm',type:'button',text:'+ Job for '+(c.name||'crew'),onclick:()=>openJob({shop:shop,crewId:c.id})})));
+  return card;
+}
+function section(title,jobs,emptyText){
+  const sec=h('div',{class:'sec'},h('h4',{text:title}));
+  if(jobs.length) jobs.forEach(j=>sec.append(jobRow(j))); else if(emptyText) sec.append(h('div',{class:'quiet',text:emptyText}));
+  return sec;
+}
+function crewName(id){ const c=S.crews.find(x=>x.id===id); return c?c.name:''; }
+function jobRow(j,showCrew){
+  const row=h('div',{class:'job '+(j.stage||'')});
+  row.append(h('div',{class:'p',text:j.project||'(no project)'}));
+  row.append(dueChip(j)||h('span'));
+  const it=[j.item,j.qty?'× '+j.qty:''].filter(Boolean).join(' ');
+  const cn=showCrew?crewName(j.crewId):'';
+  if(it||cn) row.append(h('div',{class:'i',text:[it,cn].filter(Boolean).join(' · ')}));
+  if(j.note) row.append(h('div',{class:'n',text:j.note}));
+  const acts=h('div',{class:'ed jacts'});
+  if(j.stage==='queued'||j.stage==='hold') acts.append(sm('Start',()=>setStage(j,'active')));
+  if(j.stage==='active') acts.append(sm('Done',()=>setStage(j,'done')),sm('Hold',()=>setStage(j,'hold')));
+  if(j.stage==='done') acts.append(sm('Reopen',()=>setStage(j,'active')));
+  acts.append(sm('Edit',()=>openJob(j)));
+  row.append(acts);
+  return row;
+}
+function sm(label,fn){ return h('button',{class:'btn sm',type:'button',text:label,onclick:fn}); }
+
+function renderLogistics(){
+  const box=h('div',{class:'logi'});
+  for(const k of ['in','out','staged']){
+    const items=yardItems(k,false);
+    const col=h('div',{class:'lcol'},h('h4',{text:YARD[k].label}));
+    if(!items.length) col.append(h('div',{class:'quiet',text:'None posted'}));
+    items.forEach(y=>col.append(yardRow(y)));
+    col.append(h('div',{class:'acts ed'},h('button',{class:'btn sm',type:'button',text:'+ '+YARD[k].label.replace(/s\b/,'').toLowerCase(),onclick:()=>openYard({kind:k})})));
+    box.append(col);
+  }
+  return h('div',{class:'sec'},h('h3',{class:'sect',text:'Yard logistics'}),box);
+}
+function yardRow(y){
+  const k=YARD[y.kind]||YARD.in, done=y.status==='done';
+  const row=h('div',{class:'yrow'+(done?' done':'')});
+  row.append(h('div',{class:'p',text:(y.project||y.desc||'(no description)')}));
+  row.append(done?h('span',{class:'due ok',text:k.done}):(dateChip(y.date)||h('span',{class:'due',text:k.open})));
+  const sub=[y.project&&y.desc?y.desc:'',y.qty?'× '+y.qty:'',y.carrier?y.carrier:''].filter(Boolean).join(' · ');
+  if(sub) row.append(h('div',{class:'i',text:sub}));
+  if(y.note) row.append(h('div',{class:'n',text:y.note}));
+  const acts=h('div',{class:'ed jacts'});
+  acts.append(sm(done?'Reopen':k.act,()=>setYardStatus(y,done?'open':'done')));
+  acts.append(sm('Edit',()=>openYard(y)));
+  row.append(acts);
+  return row;
+}
+function renderFoot(){
+  const all=[...S.crews,...S.jobs,...S.equipment,...S.yard,S.board];
+  let last=null; for(const d of all){ if(d.updatedAt&&(!last||d.updatedAt>last.updatedAt)) last=d; }
+  const foot=$('foot'); foot.replaceChildren();
+  if(!last){ foot.append(h('span',{text:'No changes posted yet.'})); return; }
+  foot.append(h('span',{text:'Last change '+fmtWhen(last.updatedAt)+(last.updatedBy?' · '+last.updatedBy:'')}),
+              h('span',{text:S.editing?('Editing as '+(S.name||'editor')):(S.canWrite?'Signed in as editor':'')}));
+}
+
+/* ---------- tabs, clock, theme, TV ---------- */
+function setTab(t,quiet){
+  if(!TABS.includes(t)) t='all';
+  S.tab=t; ls.set('tab',t);
+  try{ history.replaceState(null,'','#'+t); }catch(e){}
+  if(S.tv&&!quiet) startRotate();
+  render();
+  if(!quiet) window.scrollTo({top:0});
+}
+function tickClock(){
+  const d=new Date();
+  $('clockD').textContent=DOW[d.getDay()]+' '+MON[d.getMonth()]+' '+d.getDate();
+  $('clockT').textContent=fmtTime(d.toISOString());
+}
+const THEMES=['auto','dark','light'];
+function applyTheme(t){
+  if(!THEMES.includes(t)) t='auto';
+  if(t==='auto') document.documentElement.removeAttribute('data-theme'); else document.documentElement.setAttribute('data-theme',t);
+  ls.set('theme',t);
+  $('btnTheme').textContent='Theme: '+t.charAt(0).toUpperCase()+t.slice(1);
+}
+function cycleTheme(){ const cur=ls.get('theme')||'auto'; applyTheme(THEMES[(THEMES.indexOf(cur)+1)%THEMES.length]); }
+function setEditing(on){
+  S.editing=!!on&&S.canWrite;
+  document.body.classList.toggle('editing',S.editing);
+  ls.set('editing',S.editing?'1':'0');
+  $('btnEdit').classList.toggle('on',S.editing);
+  $('btnEdit').textContent=S.editing?'Editing':'Edit';
+  render();
+}
+function rotateMs(){ const s=Number(S.board.rotateSec)||20; return Math.max(8,Math.min(300,s))*1000; }
+function startRotate(){ stopRotate(); S.rotateTimer=setInterval(()=>{ const i=TABS.indexOf(S.tab); setTab(TABS[(i+1)%TABS.length],true); },rotateMs()); }
+function stopRotate(){ if(S.rotateTimer){ clearInterval(S.rotateTimer); S.rotateTimer=null; } }
+async function wakeLock(){ try{ if(navigator.wakeLock&&!S.lock){ S.lock=await navigator.wakeLock.request('screen'); S.lock.addEventListener('release',()=>{ S.lock=null; }); } }catch(e){ S.lock=null; } }
+function releaseWake(){ try{ if(S.lock){ S.lock.release(); S.lock=null; } }catch(e){} }
+function setTV(on,fromClick){
+  S.tv=!!on; document.body.classList.toggle('tv',S.tv); ls.set('tv',S.tv?'1':'0');
+  $('btnTV').textContent=S.tv?'Exit TV':'TV mode'; $('btnTV').classList.toggle('on',S.tv);
+  if(S.tv){
+    if(fromClick){ try{ const p=document.documentElement.requestFullscreen&&document.documentElement.requestFullscreen(); if(p&&p.catch) p.catch(()=>{}); }catch(e){} }
+    wakeLock(); startRotate();
+    if(S.editing) setEditing(false);
+  } else {
+    try{ if(document.fullscreenElement){ const p=document.exitFullscreen(); if(p&&p.catch) p.catch(()=>{}); } }catch(e){}
+    stopRotate(); releaseWake();
+  }
+  render();
+}
+
+/* ---------- toast ---------- */
+let toastTimer=null;
+function toast(msg){
+  let t=$('toast'); if(!t){ t=h('div',{class:'toast',id:'toast',role:'status'}); document.body.append(t); }
+  t.textContent=msg; t.hidden=false;
+  clearTimeout(toastTimer); toastTimer=setTimeout(()=>{ t.hidden=true; },3400);
+}
+
+/* ---------- writes ---------- */
+function stamp(d){ d.updatedAt=new Date().toISOString(); d.updatedBy=S.name||'editor'; return d; }
+function writeErr(e){
+  const code=(e&&e.code)||'';
+  if(code==='permission-denied'||code==='unauthenticated'){ S.canWrite=false; setEditing(false); toast('Your editor sign-in expired. Tap Edit and sign in again.'); }
+  else if(code==='resource-exhausted') toast('The board hit its daily free limit. It resets overnight.');
+  else if(code==='unavailable') toast('No connection right now. The change will send when the board reconnects.');
+  else toast('That change did not save. Try again.');
+  console.warn('write failed',e);
+}
+async function addDocTo(col,data){ if(!S.db) return false; try{ await addDoc(collection(S.db,col),data); return true; }catch(e){ writeErr(e); return false; } }
+async function setDocAt(col,id,data){ if(!S.db) return false; try{ await setDoc(doc(S.db,col,id),data); return true; }catch(e){ writeErr(e); return false; } }
+async function updDocAt(col,id,data){ if(!S.db) return false; try{ await updateDoc(doc(S.db,col,id),data); return true; }catch(e){ writeErr(e); return false; } }
+async function delDocAt(col,id){ if(!S.db) return false; try{ await deleteDoc(doc(S.db,col,id)); return true; }catch(e){ writeErr(e); return false; } }
+async function setStage(j,stage){
+  if(!j.id||S.busy.has(j.id)) return; S.busy.add(j.id);
+  const now=new Date().toISOString();
+  await updDocAt('jobs',j.id,stamp({stage:stage,doneAt:stage==='done'?now:''}));
+  S.busy.delete(j.id);
+}
+async function setYardStatus(y,status){
+  if(!y.id||S.busy.has(y.id)) return; S.busy.add(y.id);
+  await updDocAt('yard',y.id,stamp({status:status,doneAt:status==='done'?new Date().toISOString():''}));
+  S.busy.delete(y.id);
+}
+async function clearFinished(shop){
+  const jobs=S.jobs.filter(j=>j.shop===shop&&j.stage==='done');
+  const ys=shop==='yard'?S.yard.filter(y=>y.status==='done'):[];
+  if(!jobs.length&&!ys.length) return;
+  toast('Clearing '+(jobs.length+ys.length)+' finished items…');
+  for(const j of jobs){ if(!(await delDocAt('jobs',j.id))) return; }
+  for(const y of ys){ if(!(await delDocAt('yard',y.id))) return; }
+  toast('Finished items cleared.');
+}
+
+/* ---------- sheet / forms ---------- */
+function fillOptions(sel,opts,cur){
+  sel.replaceChildren(...opts.map(o=>h('option',{value:o.value,text:o.label})));
+  if(cur!=null&&[...sel.options].some(o=>o.value===cur)) sel.value=cur; else if(sel.options.length) sel.selectedIndex=0;
+}
+function buildForm(fields,values){
+  const form=h('form',{class:'form',id:'sheetform',novalidate:true});
+  const ctl={};
+  for(const f of fields){
+    let input;
+    if(f.type==='select'){ input=h('select',{id:'f_'+f.key}); fillOptions(input,typeof f.options==='function'?f.options(values):f.options,values[f.key]!=null?String(values[f.key]):''); }
+    else if(f.type==='textarea'){ input=h('textarea',{id:'f_'+f.key,rows:'2',placeholder:f.placeholder||''}); input.value=values[f.key]||''; }
+    else { input=h('input',{id:'f_'+f.key,type:f.type||'text',placeholder:f.placeholder||'',inputmode:f.inputmode||null,autocomplete:f.autocomplete||null}); input.value=values[f.key]!=null?String(values[f.key]):''; if(f.min!=null) input.min=f.min; if(f.max!=null) input.max=f.max; }
+    ctl[f.key]=input;
+    const wrap=h('div',{class:'f'+(f.half?' half':'')},h('label',{for:'f_'+f.key,text:f.label}),input);
+    if(f.hint) wrap.append(h('span',{class:'hint',text:f.hint}));
+    form.append(wrap);
+  }
+  for(const f of fields){ if(f.deps&&ctl[f.deps]){ ctl[f.deps].addEventListener('change',()=>{ const v=readForm(ctl); fillOptions(ctl[f.key],f.options(v),ctl[f.key].value); }); } }
+  return {form,ctl};
+}
+function readForm(ctl){ const v={}; for(const [k,el] of Object.entries(ctl)) v[k]=(el.value||'').trim(); return v; }
+function closeSheet(){ $('sheetbd').hidden=true; $('sheet').replaceChildren(); }
+function openSheet(o){
+  const {form,ctl}=buildForm(o.fields,o.values||{});
+  const sh=$('sheet'); sh.replaceChildren(h('h3',{text:o.title}));
+  if(o.intro) sh.append(h('p',{class:'signin-note',text:o.intro}));
+  sh.append(form);
+  if(o.extra) sh.append(o.extra);
+  const acts=h('div',{class:'acts'});
+  if(o.onDelete){
+    let confirming=false;
+    const del=h('button',{class:'btn danger',type:'button',text:o.deleteLabel||'Delete'});
+    del.addEventListener('click',async()=>{ if(!confirming){ confirming=true; del.textContent='Tap again to delete'; return; } del.disabled=true; if(await o.onDelete()) closeSheet(); else del.disabled=false; });
+    acts.append(del);
+  }
+  acts.append(h('span',{class:'spacer'}));
+  const save=h('button',{class:'btn pri',type:'submit',form:'sheetform',text:o.saveLabel||'Save'});
+  form.addEventListener('submit',async ev=>{ ev.preventDefault(); save.disabled=true; const ok=await o.onSave(readForm(ctl),ctl); if(ok) closeSheet(); else save.disabled=false; });
+  acts.append(h('button',{class:'btn',type:'button',text:'Cancel',onclick:closeSheet}),save);
+  sh.append(acts);
+  $('sheetbd').hidden=false;
+  const first=form.querySelector('input,select,textarea'); if(first) setTimeout(()=>first.focus(),40);
+}
+const shopOpts=SHOPS.map(s=>({value:s.id,label:s.name}));
+
+function openSignIn(){
+  openSheet({
+    title:'Editor sign-in',
+    intro:'Anyone can view the board. Changing it takes the editor password. Your name is shown next to your changes.',
+    values:{name:S.name||''},
+    fields:[
+      {key:'name',label:'Your name',placeholder:'e.g. Joe',autocomplete:'name'},
+      {key:'pw',label:'Editor password',type:'password',autocomplete:'current-password'}
+    ],
+    saveLabel:'Sign in',
+    onSave:async v=>{
+      if(!v.name){ toast('Put your name in so the board shows who changed what.'); return false; }
+      if(!v.pw){ toast('Enter the editor password.'); return false; }
+      try{
+        await signInWithEmailAndPassword(S.auth,EDITOR_EMAIL,v.pw);
+        S.name=v.name; ls.set('name',v.name);
+        S.canWrite=true; setEditing(true);
+        return true;
+      }catch(e){
+        const c=(e&&e.code)||'';
+        if(c==='auth/wrong-password'||c==='auth/invalid-credential'||c==='auth/invalid-login-credentials') toast('Wrong password.');
+        else if(c==='auth/too-many-requests') toast('Too many tries. Wait a few minutes.');
+        else if(c==='auth/user-not-found'||c==='auth/invalid-email') toast('Editor account not set up yet. Check EDITOR_EMAIL and the Authentication → Users list.');
+        else if(c==='auth/network-request-failed') toast('No connection. Try again when you are back online.');
+        else if(c==='auth/operation-not-allowed') toast('Email/password sign-in is not enabled in Firebase yet.');
+        else toast('Could not sign in ('+c+').');
+        return false;
+      }
+    }
+  });
+}
+function openJob(j){
+  const isNew=!j.id;
+  openSheet({
+    title:isNew?'New job':'Edit job',
+    values:{shop:j.shop||S.tab||'weld',crewId:j.crewId||'',project:j.project||'',item:j.item||'',qty:j.qty||'',due:j.due||'',stage:j.stage||'queued',note:j.note||''},
+    fields:[
+      {key:'shop',label:'Shop',type:'select',options:shopOpts,half:true},
+      {key:'crewId',label:'Crew',type:'select',deps:'shop',options:v=>[{value:'',label:'Unassigned'},...crewsFor(v.shop).map(c=>({value:c.id,label:c.name||''}))],half:true},
+      {key:'project',label:'Project / customer',placeholder:'e.g. Rec center perimeter fence'},
+      {key:'item',label:'What is being built',placeholder:'e.g. 8 ft picket panels, 4 ft walk gate'},
+      {key:'qty',label:'Qty',placeholder:'e.g. 24',half:true},
+      {key:'due',label:'Needed by',type:'date',half:true},
+      {key:'stage',label:'Stage',type:'select',options:Object.entries(STAGES).map(([v,l])=>({value:v,label:l}))},
+      {key:'note',label:'Notes',type:'textarea',placeholder:'Finish, hardware, who to call, truck day…'}
+    ],
+    onSave:async v=>{
+      if(!v.project){ toast('Give the job a project or customer name.'); return false; }
+      const now=new Date().toISOString();
+      const data=stamp({shop:v.shop,crewId:v.crewId,project:v.project,item:v.item,qty:v.qty,due:v.due,stage:v.stage,note:v.note,createdAt:j.createdAt||now,doneAt:v.stage==='done'?(j.doneAt||now):''});
+      if(j.example) data.example=true;
+      return isNew?addDocTo('jobs',data):setDocAt('jobs',j.id,data);
+    },
+    onDelete:isNew?null:()=>delDocAt('jobs',j.id)
+  });
+}
+function openCrew(c){
+  const isNew=!c.id;
+  openSheet({
+    title:isNew?'New crew':'Edit crew',
+    values:{shop:c.shop||S.tab||'weld',name:c.name||'',lead:c.lead||'',members:(c.members||[]).join(', '),note:c.note||''},
+    fields:[
+      {key:'shop',label:'Shop',type:'select',options:shopOpts},
+      {key:'name',label:'Crew name',placeholder:'e.g. Weld 1, PVC line, Truck 4'},
+      {key:'lead',label:'Lead / foreman',half:true},
+      {key:'members',label:'Crew (comma separated)',half:true,placeholder:'e.g. Mike, Carlos'},
+      {key:'note',label:'Notes',type:'textarea',placeholder:'Shift, standing assignment, certifications…'}
+    ],
+    onSave:async v=>{
+      if(!v.name){ toast('Give the crew a name.'); return false; }
+      const data=stamp({shop:v.shop,name:v.name,lead:v.lead,members:v.members.split(',').map(x=>x.trim()).filter(Boolean),note:v.note,createdAt:c.createdAt||new Date().toISOString()});
+      if(c.example) data.example=true;
+      return isNew?addDocTo('crews',data):setDocAt('crews',c.id,data);
+    },
+    onDelete:isNew?null:async()=>{
+      const n=S.jobs.filter(j=>j.crewId===c.id&&j.stage!=='done').length;
+      if(n){ toast('Move or finish this crew’s '+n+' open job'+(n>1?'s':'')+' first.'); return false; }
+      return delDocAt('crews',c.id);
+    }
+  });
+}
+function openEq(e){
+  const isNew=!e.id;
+  openSheet({
+    title:isNew?'New equipment':'Edit equipment',
+    values:{shop:e.shop||S.tab||'weld',name:e.name||'',status:e.status||'ok',note:e.note||''},
+    fields:[
+      {key:'shop',label:'Shop',type:'select',options:shopOpts,half:true},
+      {key:'status',label:'Status',type:'select',options:Object.entries(EQ_STATUS).map(([v,l])=>({value:v,label:l})),half:true},
+      {key:'name',label:'Equipment',placeholder:'e.g. Plasma table, Forklift 2, Chop saw'},
+      {key:'note',label:'What’s wrong / who’s on it',type:'textarea'}
+    ],
+    onSave:async v=>{
+      if(!v.name){ toast('Name the equipment.'); return false; }
+      const data=stamp({shop:v.shop,name:v.name,status:v.status,note:v.note,createdAt:e.createdAt||new Date().toISOString()});
+      if(e.example) data.example=true;
+      return isNew?addDocTo('equipment',data):setDocAt('equipment',e.id,data);
+    },
+    onDelete:isNew?null:()=>delDocAt('equipment',e.id)
+  });
+}
+function openYard(y){
+  const isNew=!y.id;
+  openSheet({
+    title:isNew?'New yard item':'Edit yard item',
+    values:{kind:y.kind||'in',project:y.project||'',desc:y.desc||'',qty:y.qty||'',date:y.date||'',carrier:y.carrier||'',status:y.status||'open',note:y.note||''},
+    fields:[
+      {key:'kind',label:'Type',type:'select',options:Object.entries(YARD).map(([v,k])=>({value:v,label:k.label})),half:true},
+      {key:'date',label:'Date',type:'date',half:true},
+      {key:'project',label:'Project / customer'},
+      {key:'desc',label:'Material / load',placeholder:'e.g. 9 ga chain link, 2-3/8 posts, 6 ft PVC panels'},
+      {key:'qty',label:'Qty',half:true},
+      {key:'carrier',label:'Truck / supplier',half:true,placeholder:'e.g. Truck 3, Merchants Metals'},
+      {key:'status',label:'Status',type:'select',options:[{value:'open',label:'Open'},{value:'done',label:'Done'}]},
+      {key:'note',label:'Notes',type:'textarea',placeholder:'Where it’s staged, who’s picking it up…'}
+    ],
+    onSave:async v=>{
+      if(!v.desc&&!v.project){ toast('Say what the material or load is.'); return false; }
+      const data=stamp({kind:v.kind,project:v.project,desc:v.desc,qty:v.qty,date:v.date,carrier:v.carrier,status:v.status,note:v.note,createdAt:y.createdAt||new Date().toISOString(),doneAt:v.status==='done'?(y.doneAt||new Date().toISOString()):''});
+      if(y.example) data.example=true;
+      return isNew?addDocTo('yard',data):setDocAt('yard',y.id,data);
+    },
+    onDelete:isNew?null:()=>delDocAt('yard',y.id)
+  });
+}
+function openBoard(){
+  const extra=h('div',{class:'acts',style:'border-top:1px solid var(--line);padding-top:.8rem'},
+    h('span',{class:'quiet',text:'Example data'}),h('span',{class:'spacer'}),
+    h('button',{class:'btn sm',type:'button',text:'Load',onclick:()=>{ closeSheet(); loadExamples(); }}),
+    h('button',{class:'btn sm danger',type:'button',text:'Remove',onclick:()=>{ closeSheet(); removeExamples(); }}));
+  const extra2=h('div',{class:'acts',style:'border-top:1px solid var(--line);padding-top:.8rem'},
+    h('span',{class:'quiet',text:'Editing as '+(S.name||'editor')}),h('span',{class:'spacer'}),
+    h('button',{class:'btn sm',type:'button',text:'Change name',onclick:()=>{ closeSheet(); openName(); }}),
+    h('button',{class:'btn sm ghost',type:'button',text:'Sign out',onclick:async()=>{ closeSheet(); try{ await signOut(S.auth); }catch(e){} toast('Signed out of editing.'); }}));
+  openSheet({
+    title:'Board settings',
+    values:{notice:S.board.notice||'',rotateSec:S.board.rotateSec||20},
+    fields:[
+      {key:'notice',label:'Notice (shows on every screen)',type:'textarea',placeholder:'e.g. Safety meeting Friday 7:00 AM · Truck 2 out for inspection'},
+      {key:'rotateSec',label:'TV mode: seconds per screen',type:'number',min:8,max:300,inputmode:'numeric',half:true}
+    ],
+    extra:h('div',{style:'display:flex;flex-direction:column;gap:.8rem'},extra,extra2),
+    onSave:async v=>{
+      const sec=Math.max(8,Math.min(300,Number(v.rotateSec)||20));
+      const ok=await setDocAt('config','board',stamp({notice:v.notice,rotateSec:sec}));
+      if(ok&&S.tv) startRotate();
+      return ok;
+    }
+  });
+}
+function openName(){
+  openSheet({ title:'Your name', values:{name:S.name||''}, fields:[{key:'name',label:'Shown next to your changes',autocomplete:'name'}],
+    onSave:async v=>{ if(!v.name){ toast('Enter a name.'); return false; } S.name=v.name; ls.set('name',v.name); render(); return true; } });
+}
+
+/* ---------- examples (opt-in, all flagged example:true) ---------- */
+function dayPlus(n){ const d=new Date(); d.setDate(d.getDate()+n); return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate()); }
+async function loadExamples(){
+  if(!S.db) return;
+  toast('Loading example data…');
+  const now=new Date().toISOString();
+  const mk=(o)=>stamp(Object.assign({example:true,createdAt:now},o));
+  const crewDefs=[
+    {shop:'pvc',name:'PVC line',lead:'EXAMPLE lead',members:['Fabricator','Helper']},
+    {shop:'weld',name:'Weld 1',lead:'EXAMPLE lead',members:['Welder','Welder','Helper']},
+    {shop:'weld',name:'Weld 2',lead:'EXAMPLE lead',members:['Welder','Helper']},
+    {shop:'wood',name:'Wood crew',lead:'EXAMPLE lead',members:['Carpenter','Helper']},
+    {shop:'yard',name:'Yard crew',lead:'EXAMPLE lead',members:['Forklift','Loader']},
+    {shop:'mech',name:'Mechanics',lead:'EXAMPLE lead',members:['Mechanic']}
+  ];
+  const ids={};
+  try{
+    for(const c of crewDefs){ const ref=await addDoc(collection(S.db,'crews'),mk(c)); ids[c.shop+'/'+c.name]=ref.id; }
+    const jobs=[
+      {shop:'pvc',crew:'pvc/PVC line',project:'EXAMPLE — Rec center perimeter',item:'6 ft privacy panels',qty:'32',due:dayPlus(3),stage:'active',note:'White, tongue and groove'},
+      {shop:'pvc',crew:'pvc/PVC line',project:'EXAMPLE — Residential backyard',item:'4 ft picket + 1 walk gate',qty:'14',due:dayPlus(8),stage:'queued'},
+      {shop:'weld',crew:'weld/Weld 1',project:'EXAMPLE — Station platform railing',item:'Steel picket panels',qty:'12',due:dayPlus(1),stage:'active',note:'Galv after weld, 1-1/2" sq pickets'},
+      {shop:'weld',crew:'weld/Weld 1',project:'EXAMPLE — Cantilever slide gate',item:'26 ft gate frame',qty:'1',due:dayPlus(9),stage:'queued'},
+      {shop:'weld',crew:'weld/Weld 2',project:'EXAMPLE — Park entrance',item:'Double swing gate 14 ft',qty:'1',due:dayPlus(-1),stage:'active',note:'Waiting on hinges'},
+      {shop:'weld',crew:'',project:'EXAMPLE — Loading dock bollards',item:'Bollard sleeves',qty:'20',due:dayPlus(14),stage:'queued'},
+      {shop:'wood',crew:'wood/Wood crew',project:'EXAMPLE — School playground',item:'Stockade sections 6 ft',qty:'40',due:dayPlus(4),stage:'active'},
+      {shop:'yard',crew:'yard/Yard crew',project:'EXAMPLE — Truck loading',item:'Load Truck 3 for Bronx job',qty:'',due:dayPlus(0),stage:'active'},
+      {shop:'mech',crew:'mech/Mechanics',project:'EXAMPLE — Truck 2',item:'Brakes + inspection',qty:'',due:dayPlus(2),stage:'active'},
+      {shop:'mech',crew:'mech/Mechanics',project:'EXAMPLE — Auger',item:'Hydraulic hose replacement',qty:'',due:dayPlus(5),stage:'hold',note:'Part on order'}
+    ];
+    for(const j of jobs){ await addDoc(collection(S.db,'jobs'),mk({shop:j.shop,crewId:ids[j.crew]||'',project:j.project,item:j.item,qty:j.qty,due:j.due,stage:j.stage,note:j.note||'',doneAt:''})); }
+    const eq=[
+      {shop:'weld',name:'Plasma table',status:'ok',note:''},
+      {shop:'weld',name:'Ironworker',status:'service',note:'EXAMPLE — punch die worn'},
+      {shop:'yard',name:'Forklift 2',status:'down',note:'EXAMPLE — hydraulic leak'},
+      {shop:'wood',name:'Table saw',status:'ok',note:''}
+    ];
+    for(const e of eq){ await addDoc(collection(S.db,'equipment'),mk(e)); }
+    const yard=[
+      {kind:'in',project:'EXAMPLE — Rec center perimeter',desc:'Chain link fabric 9 ga',qty:'6 rolls',date:dayPlus(0),carrier:'Supplier truck',status:'open',note:''},
+      {kind:'out',project:'EXAMPLE — Bronx job',desc:'Posts, rails, fittings',qty:'',date:dayPlus(1),carrier:'Truck 3',status:'open',note:'Stage by gate A'},
+      {kind:'staged',project:'EXAMPLE — Station platform railing',desc:'Galv panels back from galvanizer',qty:'12',date:dayPlus(-2),carrier:'',status:'open',note:'Rack 4'}
+    ];
+    for(const y of yard){ await addDoc(collection(S.db,'yard'),mk(Object.assign({doneAt:''},y))); }
+    toast('Example data loaded. Everything it added is marked EXAMPLE.');
+  }catch(e){ writeErr(e); }
+}
+async function removeExamples(){
+  const items=[['crews',S.crews],['jobs',S.jobs],['equipment',S.equipment],['yard',S.yard]].flatMap(([col,arr])=>arr.filter(d=>d.example).map(d=>[col,d.id]));
+  if(!items.length){ toast('No example data on the board.'); return; }
+  toast('Removing '+items.length+' example items…');
+  for(const [col,id] of items){ if(!(await delDocAt(col,id))) return; }
+  toast('Example data removed.');
+}
+
+/* ---------- store ---------- */
+function subscribe(col){
+  onSnapshot(collection(S.db,col),{includeMetadataChanges:true},snap=>{
+    S[col]=snap.docs.map(d=>Object.assign({id:d.id},d.data()));
+    S.loaded=true;
+    setOffline(snap.metadata.fromCache&&!navigator.onLine);
+    scheduleRender();
+  },err=>{ console.warn('subscribe failed',col,err); toast('Could not read the board ('+(err.code||'error')+'). Check the Firestore rules.'); });
+}
+function setOffline(on){ if(S.offline===on) return; S.offline=on; $('offline').hidden=!on; }
+function connect(){
+  if(!FIREBASE_CONFIG.apiKey||FIREBASE_CONFIG.apiKey==='PASTE_ME'){ S.setupNeeded=true; render(); return; }
+  const app=initializeApp(FIREBASE_CONFIG);
+  let db;
+  try{ db=initializeFirestore(app,{localCache:persistentLocalCache({tabManager:persistentMultipleTabManager()})}); }
+  catch(e){ db=getFirestore(app); }
+  S.db=db; S.auth=getAuth(app);
+  onAuthStateChanged(S.auth,u=>{ S.canWrite=!!u; if(!u&&S.editing) setEditing(false); if(u&&ls.get('editing')==='1'&&!S.tv&&!S.editing) setEditing(true); render(); });
+  ['crews','jobs','equipment','yard'].forEach(subscribe);
+  onSnapshot(doc(S.db,'config','board'),snap=>{ if(snap.exists()){ Object.assign(S.board,snap.data()); if(S.tv) startRotate(); } scheduleRender(); },()=>{});
+}
+
+/* ---------- boot ---------- */
+function boot(){
+  const fromHash=(location.hash||'').slice(1);
+  S.tab=TABS.includes(fromHash)?fromHash:(TABS.includes(ls.get('tab'))?ls.get('tab'):'all');
+  S.name=ls.get('name')||'';
+  applyTheme(ls.get('theme')||'auto');
+  tickClock(); setInterval(tickClock,15000);
+  $('btnEdit').addEventListener('click',()=>{ if(S.editing) setEditing(false); else if(S.canWrite) setEditing(true); else openSignIn(); });
+  $('btnTV').addEventListener('click',()=>setTV(!S.tv,true));
+  $('btnTheme').addEventListener('click',cycleTheme);
+  $('btnBoard').addEventListener('click',openBoard);
+  $('btnNotice').addEventListener('click',openBoard);
+  $('sheetbd').addEventListener('click',ev=>{ if(ev.target===$('sheetbd')) closeSheet(); });
+  document.addEventListener('keydown',ev=>{ if(ev.key==='Escape'&&!$('sheetbd').hidden) closeSheet(); });
+  document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible'&&S.tv) wakeLock(); });
+  window.addEventListener('hashchange',()=>{ const t=(location.hash||'').slice(1); if(TABS.includes(t)&&t!==S.tab) setTab(t,true); });
+  window.addEventListener('online',()=>setOffline(false));
+  if(ls.get('tv')==='1') setTV(true,false);
+  render();
+  connect();
+}
+boot();
+</script>
+</body>
+</html>
