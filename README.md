@@ -37,6 +37,9 @@ Optional: **Custom domain** on that same Pages screen (e.g. `board.yaboofence.co
 - **Editing:** tap **Edit**, enter your name and the editor password. The device stays signed in afterwards; tap Edit to switch editing on and off. Your name is stamped on every change you make. Sign out is under Board settings.
 - **Jobs** move Coming up → Working now → Finished (or On hold). Finished jobs sit under "Finished · last 7 days" per shop; **Clear finished** deletes them.
 - **Example data:** Board settings → Example data → Load / Remove. Everything it adds is marked EXAMPLE.
+- **Attachments:** in Edit mode every job has an **Attach** button. Pick a PDF (a scanned worksheet) or a photo; on a phone the same button offers the camera. Attached files show as chips on the job for everyone, editors or not; tap one to view it in place or open it in a new tab. Attachments are deleted with their job (Delete, or Clear finished).
+  - Files are stored in the Firestore database itself, split into pieces, so there's no separate file service and no billing account. Limit is 12 MB per file. Scan at **150 dpi, black-and-white or grayscale, letter size** — that's roughly 50–200 KB per page and loads instantly on a phone. Photos are shrunk to about 2200 px on the long side before upload.
+  - The free plan holds 1 GB total. At typical scan sizes that's several thousand pages; clearing finished jobs frees the space their attachments used.
 
 ## Changing the editor password
 

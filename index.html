@@ -208,6 +208,20 @@ img{max-width:100%}
 .setup code{background:var(--panel-2); border:1px solid var(--line); border-radius:4px; padding:.1em .35em; color:var(--fg); font-size:.9em}
 .setup ol{margin:0; padding-left:1.3em; display:flex; flex-direction:column; gap:.4rem}
 .offline{font-size:.75rem; color:var(--warn); text-transform:uppercase; letter-spacing:.1em}
+/* attachments */
+.atts{grid-column:1/-1; display:flex; gap:.35rem; flex-wrap:wrap; padding-top:.25rem}
+.att{display:inline-flex; align-items:center; gap:.35em; font:inherit; font-size:.82em; font-weight:500; padding:.2em .6em; border-radius:99px; background:var(--panel-2); border:1px solid var(--line-2); color:var(--fg); cursor:pointer; max-width:100%; min-width:0; line-height:1.3}
+.att:hover{border-color:var(--muted)}
+.att .clip{display:inline-flex; color:var(--muted)} .clip svg{width:1em; height:1em; display:block}
+.att span.nm{overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.attc{display:inline-flex; align-items:center; gap:.3em; color:var(--faint); font-size:.82em; grid-column:1}
+.viewer{display:flex; flex-direction:column; gap:.6rem; flex:none}
+.viewer .pages{display:flex; flex-direction:column; gap:.5rem; background:var(--panel-2); padding:.5rem; border-radius:6px; min-height:6rem}
+.viewer canvas,.viewer img{width:100%; height:auto; display:block; background:#fff; border-radius:3px}
+.sheet.wide{max-width:980px}
+.sheet.wide .acts{position:sticky; bottom:calc(-1.2rem - env(safe-area-inset-bottom,0px)); background:var(--panel); padding-block:.6rem; margin-bottom:calc(-1.2rem - env(safe-area-inset-bottom,0px)); border-top:1px solid var(--line)}
+a.btn{text-decoration:none; display:inline-flex; align-items:center}
+.prog{height:4px; background:var(--line); border-radius:2px; overflow:hidden; width:100%} .prog i{display:block; height:100%; background:var(--accent); width:0; transition:width .2s}
 </style>
 </head>
 <body>
@@ -249,7 +263,7 @@ const EDITOR_EMAIL = "joejr@yaboofence.com";
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js";
 import { getFirestore, initializeFirestore, persistentLocalCache, persistentMultipleTabManager,
-         collection, doc, onSnapshot, addDoc, setDoc, updateDoc, deleteDoc}
+         collection, doc, onSnapshot, addDoc, setDoc, updateDoc, deleteDoc, getDoc}
   from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
 import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged }
   from "https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js";
@@ -274,10 +288,13 @@ const DOW=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
 const MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
 const S={
-  crews:[],jobs:[],equipment:[],yard:[],board:{rotateSec:20,notice:''},
+  crews:[],jobs:[],equipment:[],yard:[],files:[],board:{rotateSec:20,notice:''},
   loaded:false, setupNeeded:false, db:null, auth:null, canWrite:false, name:'',
-  editing:false, tab:'all', tv:false, busy:new Set(), rotateTimer:null, lock:null, offline:false
+  editing:false, tab:'all', tv:false, busy:new Set(), rotateTimer:null, lock:null, offline:false,
+  blobCache:new Map(), sheetCleanup:null
 };
+const PDFJS='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/6.3.289/';
+const CHUNK=700*1024, MAX_FILE=12*1024*1024, MAX_PAGES=30;
 
 const $=id=>document.getElementById(id);
 function h(tag,attrs,...kids){
@@ -333,6 +350,8 @@ function jobsFor(shop,crewId,stage){ return S.jobs.filter(j=>j.shop===shop&&j.st
 function recentDone(shop){ const cut=Date.now()-7*86400000; return S.jobs.filter(j=>j.shop===shop&&j.stage==='done'&&(!j.doneAt||new Date(j.doneAt).getTime()>cut)).sort((a,b)=>(b.doneAt||'')<(a.doneAt||'')?-1:1); }
 function eqFor(shop){ const rank={down:0,service:1,ok:2}; return S.equipment.filter(e=>e.shop===shop).sort((a,b)=>(rank[a.status]??3)-(rank[b.status]??3)||(a.name||'').localeCompare(b.name||'')); }
 function yardItems(kind,done){ return S.yard.filter(y=>y.kind===kind&&(done?y.status==='done':y.status!=='done')).sort((a,b)=>((a.date||'9999')<(b.date||'9999')?-1:(a.date||'9999')>(b.date||'9999')?1:0)); }
+function filesFor(jobId){ return S.files.filter(f=>f.jobId===jobId).sort((a,b)=>(a.createdAt||'')<(b.createdAt||'')?-1:1); }
+function clip(){ const s=document.createElement('span'); s.className='clip'; s.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21.44 11.05l-9.19 9.19a6 6 0 0 1-8.49-8.49l9.19-9.19a4 4 0 0 1 5.66 5.66l-9.2 9.19a2 2 0 0 1-2.83-2.83l8.49-8.48"/></svg>'; return s; }
 
 /* ---------- render ---------- */
 let queued=false;
@@ -422,7 +441,9 @@ function renderOverview(){
 }
 function ovJob(j){
   const it=[j.item,j.qty?'× '+j.qty:''].filter(Boolean).join(' ');
-  return h('div',{class:'ovj '+(j.stage||'')},h('span',{class:'p',text:j.project||'(no project)'}),dueChip(j)||h('span'),it?h('span',{class:'i',text:it}):null);
+  const n=filesFor(j.id).length;
+  return h('div',{class:'ovj '+(j.stage||'')},h('span',{class:'p',text:j.project||'(no project)'}),dueChip(j)||h('span'),it?h('span',{class:'i',text:it}):null,
+    n?h('span',{class:'attc'},clip(),String(n)):null);
 }
 
 function renderShop(id){
@@ -498,11 +519,18 @@ function jobRow(j,showCrew){
   const cn=showCrew?crewName(j.crewId):'';
   if(it||cn) row.append(h('div',{class:'i',text:[it,cn].filter(Boolean).join(' · ')}));
   if(j.note) row.append(h('div',{class:'n',text:j.note}));
+  const files=filesFor(j.id);
+  if(files.length){
+    const atts=h('div',{class:'atts'});
+    files.forEach(f=>atts.append(h('button',{class:'att',type:'button',title:f.name||'',onclick:()=>openViewer(f)},clip(),h('span',{class:'nm',text:f.name||'file'}))));
+    row.append(atts);
+  }
   const acts=h('div',{class:'ed jacts'});
   if(j.stage==='queued'||j.stage==='hold') acts.append(sm('Start',()=>setStage(j,'active')));
   if(j.stage==='active') acts.append(sm('Done',()=>setStage(j,'done')),sm('Hold',()=>setStage(j,'hold')));
   if(j.stage==='done') acts.append(sm('Reopen',()=>setStage(j,'active')));
   acts.append(sm('Edit',()=>openJob(j)));
+  acts.append(sm('Attach',()=>pickFile(j)));
   row.append(acts);
   return row;
 }
@@ -630,9 +658,127 @@ async function clearFinished(shop){
   const ys=shop==='yard'?S.yard.filter(y=>y.status==='done'):[];
   if(!jobs.length&&!ys.length) return;
   toast('Clearing '+(jobs.length+ys.length)+' finished items…');
-  for(const j of jobs){ if(!(await delDocAt('jobs',j.id))) return; }
+  for(const j of jobs){ if(!(await deleteJob(j))) return; }
   for(const y of ys){ if(!(await delDocAt('yard',y.id))) return; }
   toast('Finished items cleared.');
+}
+async function deleteJob(j){
+  for(const f of filesFor(j.id)){ if(!(await deleteFile(f))) return false; }
+  return delDocAt('jobs',j.id);
+}
+
+/* ---------- attachments (PDF scans and photos, stored in Firestore in chunks) ---------- */
+function blobToB64(blob){ return new Promise((res,rej)=>{ const r=new FileReader(); r.onload=()=>res(String(r.result).split(',')[1]||''); r.onerror=()=>rej(r.error); r.readAsDataURL(blob); }); }
+function b64ToBytes(b64){ const bin=atob(b64); const u=new Uint8Array(bin.length); for(let i=0;i<bin.length;i++) u[i]=bin.charCodeAt(i); return u; }
+async function shrinkImage(file){
+  const url=URL.createObjectURL(file);
+  try{
+    const img=await new Promise((res,rej)=>{ const i=new Image(); i.onload=()=>res(i); i.onerror=()=>rej(new Error('decode')); i.src=url; });
+    const MAXS=2200; const s=Math.min(1,MAXS/Math.max(img.naturalWidth,img.naturalHeight));
+    const w=Math.max(1,Math.round(img.naturalWidth*s)), hh=Math.max(1,Math.round(img.naturalHeight*s));
+    const c=document.createElement('canvas'); c.width=w; c.height=hh; c.getContext('2d').drawImage(img,0,0,w,hh);
+    const out=await new Promise(res=>c.toBlob(res,'image/jpeg',0.82));
+    return out||file;
+  } finally{ URL.revokeObjectURL(url); }
+}
+function pickFile(job){
+  if(!S.canWrite){ openSignIn(); return; }
+  let inp=$('filepick');
+  if(!inp){ inp=h('input',{type:'file',id:'filepick',accept:'application/pdf,image/*',style:'position:fixed;left:-9999px;top:0;opacity:0'}); document.body.append(inp); }
+  inp.value=''; inp.onchange=()=>{ const f=inp.files&&inp.files[0]; if(f) uploadFile(job,f); };
+  inp.click();
+}
+async function uploadFile(job,file){
+  if(!S.db||!job.id) return;
+  let blob=file, type=file.type||'', name=(file.name||'file').slice(0,120);
+  if(type.startsWith('image/')){ try{ blob=await shrinkImage(file); type='image/jpeg'; name=name.replace(/\.[^.]+$/,'')+'.jpg'; }catch(e){ toast('Could not read that photo.'); return; } }
+  else if(type==='application/pdf'||/\.pdf$/i.test(name)){ type='application/pdf'; }
+  else { toast('Attach a PDF or a photo.'); return; }
+  if(blob.size>MAX_FILE){ toast('That file is over 12 MB. Scan at 150 dpi black-and-white and try again.'); return; }
+  const chunks=Math.ceil(blob.size/CHUNK)||1;
+  const id=doc(collection(S.db,'files')).id;
+  try{
+    for(let i=0;i<chunks;i++){
+      toast('Uploading '+name+' … '+(i+1)+'/'+chunks);
+      const b64=await blobToB64(blob.slice(i*CHUNK,(i+1)*CHUNK));
+      await setDoc(doc(S.db,'files',id,'chunks',String(i)),{d:b64});
+    }
+    await setDoc(doc(S.db,'files',id),stamp({jobId:job.id,name,type,size:blob.size,chunks,createdAt:new Date().toISOString()}));
+    toast('Attached '+name);
+  }catch(e){ writeErr(e); }
+}
+async function deleteFile(meta){
+  if(!S.db) return false;
+  try{
+    for(let i=0;i<(meta.chunks||0);i++){ await deleteDoc(doc(S.db,'files',meta.id,'chunks',String(i))); }
+    await deleteDoc(doc(S.db,'files',meta.id));
+    S.blobCache.delete(meta.id);
+    return true;
+  }catch(e){ writeErr(e); return false; }
+}
+async function loadFileBlob(meta){
+  if(S.blobCache.has(meta.id)) return S.blobCache.get(meta.id);
+  const parts=[];
+  for(let i=0;i<(meta.chunks||0);i++){
+    const s=await getDoc(doc(S.db,'files',meta.id,'chunks',String(i)));
+    if(!s.exists()) throw new Error('Part '+(i+1)+' of this file is missing.');
+    parts.push(b64ToBytes(s.data().d||''));
+  }
+  const blob=new Blob(parts,{type:meta.type||'application/octet-stream'});
+  S.blobCache.set(meta.id,blob);
+  return blob;
+}
+let pdfjsP=null;
+function pdfjs(){
+  if(!pdfjsP) pdfjsP=import(PDFJS+'pdf.min.mjs').then(m=>{ m.GlobalWorkerOptions.workerSrc=PDFJS+'pdf.worker.min.mjs'; return m; });
+  return pdfjsP;
+}
+async function renderPdf(blob,box){
+  const lib=await pdfjs();
+  const pdf=await lib.getDocument({data:new Uint8Array(await blob.arrayBuffer())}).promise;
+  const n=Math.min(pdf.numPages,MAX_PAGES);
+  const cw=Math.max(200,box.clientWidth-16), dpr=Math.min(2,window.devicePixelRatio||1);
+  for(let p=1;p<=n;p++){
+    const page=await pdf.getPage(p);
+    const v0=page.getViewport({scale:1}); const vp=page.getViewport({scale:(cw/v0.width)*dpr});
+    const c=document.createElement('canvas'); c.width=Math.floor(vp.width); c.height=Math.floor(vp.height);
+    box.append(c);
+    await page.render({canvasContext:c.getContext('2d'),viewport:vp}).promise;
+  }
+  if(pdf.numPages>n) box.append(h('div',{class:'quiet',text:'Showing the first '+n+' of '+pdf.numPages+' pages. Use "Open in new tab" for the rest.'}));
+}
+async function openViewer(meta){
+  const sh=$('sheet'); sh.classList.add('wide'); sh.replaceChildren(h('h3',{text:meta.name||'Attachment'}));
+  const job=S.jobs.find(j=>j.id===meta.jobId);
+  sh.append(h('p',{class:'signin-note',text:[job?job.project:'',meta.updatedBy?'added by '+meta.updatedBy:'',meta.createdAt?fmtWhen(meta.createdAt):''].filter(Boolean).join(' · ')}));
+  const pages=h('div',{class:'pages'},h('div',{class:'quiet',text:'Loading…'}));
+  const view=h('div',{class:'viewer'},pages);
+  sh.append(view);
+  const acts=h('div',{class:'acts'});
+  const open=h('a',{class:'btn',href:'#',target:'_blank',rel:'noopener',text:'Open in new tab',hidden:true});
+  acts.append(open);
+  if(S.editing){
+    let confirming=false;
+    const del=h('button',{class:'btn danger',type:'button',text:'Delete'});
+    del.addEventListener('click',async()=>{ if(!confirming){ confirming=true; del.textContent='Tap again to delete'; return; } del.disabled=true; if(await deleteFile(meta)){ closeSheet(); toast('Attachment deleted.'); } else del.disabled=false; });
+    acts.append(del);
+  }
+  acts.append(h('span',{class:'spacer'}),h('button',{class:'btn',type:'button',text:'Close',onclick:closeSheet}));
+  sh.append(acts);
+  $('sheetbd').hidden=false;
+  let url=null;
+  S.sheetCleanup=()=>{ if(url) URL.revokeObjectURL(url); };
+  try{
+    const blob=await loadFileBlob(meta);
+    if($('sheetbd').hidden) return;
+    url=URL.createObjectURL(blob); open.href=url; open.hidden=false;
+    pages.replaceChildren();
+    if((meta.type||'').startsWith('image/')){ pages.append(h('img',{src:url,alt:meta.name||''})); }
+    else { await renderPdf(blob,pages); }
+  }catch(e){
+    console.warn('view failed',e);
+    pages.replaceChildren(h('div',{class:'quiet',text:'Could not open this file. '+(e&&e.message?e.message:'')}));
+  }
 }
 
 /* ---------- sheet / forms ---------- */
@@ -657,7 +803,7 @@ function buildForm(fields,values){
   return {form,ctl};
 }
 function readForm(ctl){ const v={}; for(const [k,el] of Object.entries(ctl)) v[k]=(el.value||'').trim(); return v; }
-function closeSheet(){ $('sheetbd').hidden=true; $('sheet').replaceChildren(); }
+function closeSheet(){ $('sheetbd').hidden=true; const sh=$('sheet'); sh.classList.remove('wide'); sh.replaceChildren(); if(S.sheetCleanup){ try{ S.sheetCleanup(); }catch(e){} S.sheetCleanup=null; } }
 function openSheet(o){
   const {form,ctl}=buildForm(o.fields,o.values||{});
   const sh=$('sheet'); sh.replaceChildren(h('h3',{text:o.title}));
@@ -734,7 +880,7 @@ function openJob(j){
       if(j.example) data.example=true;
       return isNew?addDocTo('jobs',data):setDocAt('jobs',j.id,data);
     },
-    onDelete:isNew?null:()=>delDocAt('jobs',j.id)
+    onDelete:isNew?null:()=>deleteJob(j)
   });
 }
 function openCrew(c){
@@ -887,7 +1033,10 @@ async function removeExamples(){
   const items=[['crews',S.crews],['jobs',S.jobs],['equipment',S.equipment],['yard',S.yard]].flatMap(([col,arr])=>arr.filter(d=>d.example).map(d=>[col,d.id]));
   if(!items.length){ toast('No example data on the board.'); return; }
   toast('Removing '+items.length+' example items…');
-  for(const [col,id] of items){ if(!(await delDocAt(col,id))) return; }
+  for(const [col,id] of items){
+    if(col==='jobs'){ for(const f of filesFor(id)){ if(!(await deleteFile(f))) return; } }
+    if(!(await delDocAt(col,id))) return;
+  }
   toast('Example data removed.');
 }
 
@@ -909,7 +1058,7 @@ function connect(){
   catch(e){ db=getFirestore(app); }
   S.db=db; S.auth=getAuth(app);
   onAuthStateChanged(S.auth,u=>{ S.canWrite=!!u; if(!u&&S.editing) setEditing(false); if(u&&ls.get('editing')==='1'&&!S.tv&&!S.editing) setEditing(true); render(); });
-  ['crews','jobs','equipment','yard'].forEach(subscribe);
+  ['crews','jobs','equipment','yard','files'].forEach(subscribe);
   onSnapshot(doc(S.db,'config','board'),snap=>{ if(snap.exists()){ Object.assign(S.board,snap.data()); if(S.tv) startRotate(); } scheduleRender(); },()=>{});
 }
 
