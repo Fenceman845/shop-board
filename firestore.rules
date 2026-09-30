@@ -2,13 +2,32 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Two accounts exist under Authentication → Users. Keep these in step with
-    // EDITOR_EMAIL and CREW_EMAIL at the top of index.html.
-    function isEditor() {
-      return request.auth != null && request.auth.token.email == 'joejr@yaboofence.com';
+    // Who is asking. Access comes from the People list (the `users` collection,
+    // one document per person, keyed by their sign-in email). The ADMIN_EMAIL
+    // below is always an administrator so the board can never lock itself out.
+    function email() {
+      return request.auth != null ? request.auth.token.email.lower() : '';
+    }
+    function hasProfile() {
+      return request.auth != null
+          && exists(/databases/$(database)/documents/users/$(email()));
+    }
+    function me() {
+      return get(/databases/$(database)/documents/users/$(email())).data;
+    }
+    function isAdmin() {
+      return request.auth != null
+          && (email() == 'joejr@yaboofence.com' || (hasProfile() && me().role == 'admin'));
+    }
+    function isOffice() {
+      return isAdmin() || (hasProfile() && me().role == 'office');
     }
     function isCrew() {
-      return request.auth != null && request.auth.token.email == 'crew@yaboofence.com';
+      return hasProfile() && me().role == 'crew';
+    }
+    // Office and admin see every shop; everyone else sees only the shops on their entry.
+    function seesShop(shop) {
+      return isOffice() || (hasProfile() && (me().all == true || shop in me().shops));
     }
     // A crew update may only touch the progress fields on a job.
     function progressOnly() {
@@ -16,16 +35,38 @@ service cloud.firestore {
                .hasOnly(['done', 'log', 'updatedAt', 'updatedBy']);
     }
 
-    // Anyone with the link can read the board (the TV and phones never sign in).
-    // Editors can change anything. Crew can post progress on jobs and nothing else.
-    match /jobs/{jobId} {
-      allow read: if true;
-      allow create, delete: if isEditor();
-      allow update: if isEditor() || (isCrew() && progressOnly());
+    match /users/{person} {
+      allow read: if isAdmin() || (request.auth != null && person == email());
+      allow write: if isAdmin();
     }
-    match /{document=**} {
-      allow read: if true;
-      allow write: if isEditor();
+    match /config/{docId} {
+      allow read: if hasProfile() || isAdmin();
+      allow write: if isOffice();
+    }
+    match /crews/{id} {
+      allow read: if seesShop(resource.data.shop);
+      allow write: if isOffice();
+    }
+    match /equipment/{id} {
+      allow read: if seesShop(resource.data.shop);
+      allow write: if isOffice();
+    }
+    match /yard/{id} {
+      allow read: if seesShop('yard');
+      allow write: if isOffice();
+    }
+    match /jobs/{id} {
+      allow read: if seesShop(resource.data.shop);
+      allow create, delete: if isOffice();
+      allow update: if isOffice() || (isCrew() && seesShop(resource.data.shop) && progressOnly());
+    }
+    match /files/{id} {
+      allow read: if seesShop(resource.data.shop);
+      allow write: if isOffice();
+      match /chunks/{n} {
+        allow read: if seesShop(get(/databases/$(database)/documents/files/$(id)).data.shop);
+        allow write: if isOffice();
+      }
     }
   }
 }

@@ -93,7 +93,7 @@ main{flex:1; min-width:0}
 body:not(.editing) .ed{display:none !important}
 body:not(.editing):not(.crew) .cr{display:none !important}
 body:not(.editing):not(.crew) .jacts, body.tv .jacts{display:none !important}
-body.tv .ed, body.tv .cr, body.tv .ctrl-edit{display:none !important}
+body.tv .ed, body.tv .cr, body.tv .ctrl-edit, body.tv .ctrl-user{display:none !important}
 /* progress */
 .pw{grid-column:1/-1; display:grid; grid-template-columns:minmax(0,1fr) auto; gap:.15rem .6rem; align-items:center; padding-top:.15rem}
 .pb{height:.5rem; background:var(--line); border-radius:3px; overflow:hidden; grid-column:1/-1}
@@ -133,7 +133,19 @@ body.editing .chip.ed-click{cursor:pointer}
 /* overview */
 .ov{display:grid; gap:1rem; grid-template-columns:1fr}
 @media (min-width:620px){ .ov{grid-template-columns:1fr 1fr} .ov > :last-child:nth-child(odd){grid-column:1/-1} }
-@media (min-width:1120px){ .ov{grid-template-columns:repeat(5,minmax(0,1fr))} .ov > :last-child:nth-child(odd){grid-column:auto} }
+@media (min-width:1120px){ .ov{grid-template-columns:repeat(var(--cols,5),minmax(0,1fr))} .ov > :last-child:nth-child(odd){grid-column:auto} }
+.gate{max-width:30rem; margin:3rem auto; display:flex; flex-direction:column; gap:.9rem; align-items:flex-start; background:var(--panel); border:1px solid var(--line); border-radius:8px; padding:1.4rem 1.4rem 1.5rem}
+.gate h2{font-family:var(--display); font-size:2rem; text-transform:uppercase; margin:0; letter-spacing:.03em; line-height:1}
+.gate p{margin:0; color:var(--muted)}
+.people{display:flex; flex-direction:column; gap:.4rem; border-top:1px solid var(--line); padding-top:.8rem}
+.person{display:grid; grid-template-columns:minmax(0,1fr) auto; gap:.1rem .6rem; padding:.45rem .6rem; background:var(--panel-2); border-radius:4px; align-items:center; cursor:pointer; border:1px solid transparent}
+.person:hover{border-color:var(--line-2)}
+.person .nm{font-weight:600} .person .em{color:var(--muted); font-size:.88em; grid-column:1; overflow-wrap:anywhere}
+.person .rl{font-size:.78em; font-weight:600; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); white-space:nowrap; grid-row:1/3; align-self:center}
+.checks{display:flex; flex-wrap:wrap; gap:.4rem .9rem; grid-column:1/-1}
+.f .checks label{display:inline-flex; align-items:center; gap:.4em; font-size:.95rem; text-transform:none; letter-spacing:0; color:var(--fg)}
+.f .checks input{width:auto; accent-color:var(--accent)}
+.rolehelp{color:var(--faint); font-size:.82em; grid-column:1/-1}
 .ovc{background:var(--panel); border:1px solid var(--line); border-radius:6px; padding:.85rem .95rem 1rem; display:flex; flex-direction:column; gap:.7rem; min-width:0}
 .ovh{display:flex; align-items:center; gap:.55rem; background:none; border:0; padding:0; color:inherit; font:inherit; cursor:pointer; text-align:left; width:100%; border-radius:4px}
 .ovh h2{font-family:var(--display); font-size:1.5rem; text-transform:uppercase; margin:0; line-height:1; letter-spacing:.03em; flex:1; min-width:0}
@@ -250,7 +262,8 @@ a.btn{text-decoration:none; display:inline-flex; align-items:center}
       <span class="offline" id="offline" hidden>Offline · showing last data</span>
       <button class="btn sm ed" id="btnBoard" type="button">Board settings</button>
       <button class="btn sm ghost" id="btnTheme" type="button" title="Theme">Theme: Auto</button>
-      <button class="btn sm ctrl-edit" id="btnEdit" type="button">Edit</button>
+      <button class="btn sm ctrl-edit" id="btnEdit" type="button" hidden>Edit</button>
+      <button class="btn sm ctrl-user" id="btnUser" type="button">Sign in</button>
       <button class="btn sm" id="btnTV" type="button">TV mode</button>
     </div>
   </header>
@@ -264,7 +277,7 @@ a.btn{text-decoration:none; display:inline-flex; align-items:center}
 /* =========================================================================
    SETUP — the only two things to edit.
    1) Paste the firebaseConfig from Firebase console → Project settings → Your apps.
-   2) EDITOR_EMAIL must match the user you created under Authentication → Users.
+   2) ADMIN_EMAIL is the account that can always manage People.
    ========================================================================= */
 const FIREBASE_CONFIG = {
   apiKey: "AIzaSyCgsmliJaB6UBIFw6Y9krUrNcglLKk7DpQ",
@@ -274,17 +287,16 @@ const FIREBASE_CONFIG = {
   messagingSenderId: "206131007766",
   appId: "1:206131007766:web:6100903417a3ec010f0037"
 };
-const EDITOR_EMAIL = "joejr@yaboofence.com";
-/* Optional second account: crews sign in with this one and can ONLY post progress on jobs
-   (enforced by firestore.rules). Leave it "" to turn the crew role off. */
-const CREW_EMAIL = "crew@yaboofence.com";
+/* The one account that is always an administrator, even before it has a People entry.
+   Everyone else gets their access from the People list (Board settings → People). */
+const ADMIN_EMAIL = "joejr@yaboofence.com";
 /* ========================================================================= */
 
-import { initializeApp } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js";
+import { initializeApp, deleteApp } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js";
 import { getFirestore, initializeFirestore, persistentLocalCache, persistentMultipleTabManager,
-         collection, doc, onSnapshot, addDoc, setDoc, updateDoc, deleteDoc, getDoc, increment, arrayUnion}
+         collection, doc, onSnapshot, addDoc, setDoc, updateDoc, deleteDoc, getDoc, increment, arrayUnion, query, where }
   from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
-import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged }
+import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, createUserWithEmailAndPassword, updatePassword, sendPasswordResetEmail }
   from "https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js";
 
 const SHOPS=[
@@ -295,7 +307,12 @@ const SHOPS=[
   {id:'mech', name:'Mechanic Shop'}
 ];
 const SHOP_BY=Object.fromEntries(SHOPS.map(s=>[s.id,s]));
-const TABS=['all',...SHOPS.map(s=>s.id)];
+const ROLES={
+  admin: {label:'Administrator', desc:'Everything, plus manages People'},
+  office:{label:'Office',        desc:'Add, change and finish anything; attach files; board settings'},
+  crew:  {label:'Crew',          desc:'Sees their shops and posts progress on jobs'},
+  viewer:{label:'View only',     desc:'Sees their shops, changes nothing (use for the TV)'}
+};
 const STAGES={active:'Working now',queued:'Coming up',hold:'On hold',done:'Finished'};
 const EQ_STATUS={ok:'Running',service:'Needs service',down:'Down'};
 const YARD={
@@ -307,12 +324,26 @@ const DOW=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
 const MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
 const S={
-  crews:[],jobs:[],equipment:[],yard:[],files:[],board:{rotateSec:20,notice:''},
-  loaded:false, setupNeeded:false, db:null, auth:null, canWrite:false, role:null, name:'',
+  crews:[],jobs:[],equipment:[],yard:[],files:[],users:[],board:{rotateSec:20,notice:''},
+  parts:{}, unsubs:[],
+  loaded:false, setupNeeded:false, db:null, auth:null, user:null, me:null, profileMissing:false,
+  canWrite:false, role:null, name:'',
   editing:false, tab:'all', tv:false, busy:new Set(), rotateTimer:null, lock:null, offline:false,
   blobCache:new Map(), sheetCleanup:null
 };
 const UNITS={pcs:{short:'pcs',long:'pieces',step:'1'},lf:{short:'LF',long:'linear feet',step:'0.5'}};
+
+/* ---------- who am I / what can I see ---------- */
+function isOffice(){ return S.role==='admin'||S.role==='office'; }
+function isAdmin(){ return S.role==='admin'; }
+function visibleShops(){
+  if(!S.me) return [];
+  if(isOffice()||S.me.all===true) return SHOPS.map(s=>s.id);
+  const list=Array.isArray(S.me.shops)?S.me.shops:[];
+  return SHOPS.map(s=>s.id).filter(id=>list.includes(id));
+}
+function tabs(){ const v=visibleShops(); return v.length>1?['all',...v]:v; }
+function canSee(shop){ return visibleShops().includes(shop); }
 const PDFJS='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/6.3.289/';
 const CHUNK=700*1024, MAX_FILE=12*1024*1024, MAX_PAGES=30;
 
@@ -380,10 +411,29 @@ function render(){
   renderTabs();
   const main=$('main');
   if(S.setupNeeded){ main.replaceChildren(renderSetup()); renderNotice(); return; }
-  if(!S.loaded){ main.replaceChildren(h('div',{class:'msg',text:'Connecting to the board…'})); renderNotice(); return; }
+  if(!S.user){ main.replaceChildren(renderGate('signin')); renderNotice(); renderFoot(); return; }
+  if(S.profileMissing){ main.replaceChildren(renderGate('noprofile')); renderNotice(); renderFoot(); return; }
+  if(!S.me||!S.loaded){ main.replaceChildren(h('div',{class:'msg',text:'Connecting to the board…'})); renderNotice(); return; }
+  const t=tabs();
+  if(!t.length){ main.replaceChildren(renderGate('noshops')); renderNotice(); renderFoot(); return; }
+  if(!t.includes(S.tab)) S.tab=t[0];
   main.replaceChildren(S.tab==='all'?renderOverview():renderShop(S.tab));
   renderNotice();
   renderFoot();
+}
+function renderGate(kind){
+  if(kind==='signin') return h('div',{class:'gate'},
+    h('h2',{text:'Sign in to see the board'}),
+    h('p',{text:'Use the email and password you were given. Each device stays signed in afterwards.'}),
+    h('button',{class:'btn pri',type:'button',text:'Sign in',onclick:openSignIn}));
+  if(kind==='noprofile') return h('div',{class:'gate'},
+    h('h2',{text:'Not set up yet'}),
+    h('p',{text:'You are signed in as '+((S.user&&S.user.email)||'')+', but that account has not been added to the board’s People list. Ask the office to add it, then reload.'}),
+    h('button',{class:'btn',type:'button',text:'Sign out',onclick:doSignOut}));
+  return h('div',{class:'gate'},
+    h('h2',{text:'No shops assigned'}),
+    h('p',{text:'Your account has no shops on it yet. Ask the office to add the shops you should see.'}),
+    h('button',{class:'btn',type:'button',text:'Sign out',onclick:doSignOut}));
 }
 function renderSetup(){
   return h('div',{class:'setup'},
@@ -393,7 +443,8 @@ function renderSetup(){
 }
 function renderTabs(){
   const nav=$('tabs'); nav.replaceChildren();
-  for(const t of TABS){
+  if(!S.me) return;
+  for(const t of tabs()){
     const s=SHOP_BY[t];
     const n=t==='all'?S.jobs.filter(j=>j.stage==='active').length:jobsFor(t,undefined,'active').length;
     const b=h('button',{class:'tab',role:'tab','aria-selected':S.tab===t?'true':'false',type:'button',style:s?'--shop:var(--shop-'+t+')':'',onclick:()=>setTab(t)},
@@ -424,8 +475,9 @@ function renderOverview(){
       h('p',{text:'Turn on Edit, open a shop tab, and add its crews and the jobs they are on. Or load example data to see how the board lays out, then remove it.'}),
       h('div',{class:'acts ed'},h('button',{class:'btn pri',type:'button',text:'Load example data',onclick:loadExamples})));
   }
-  const grid=h('div',{class:'ov'});
-  for(const s of SHOPS){
+  const vis=visibleShops();
+  const grid=h('div',{class:'ov',style:'--cols:'+vis.length});
+  for(const s of SHOPS.filter(x=>vis.includes(x.id))){
     const crews=crewsFor(s.id), now=jobsFor(s.id,undefined,'active'), next=jobsFor(s.id,undefined,'queued'), hold=jobsFor(s.id,undefined,'hold');
     const eqBad=eqFor(s.id).filter(e=>e.status!=='ok');
     const card=h('article',{class:'ovc',style:'--shop:var(--shop-'+s.id+')'});
@@ -604,17 +656,19 @@ function yardRow(y){
   return row;
 }
 function renderFoot(){
+  const foot=$('foot'); foot.replaceChildren();
+  if(!S.me){ foot.append(h('span',{text:S.user?'':'Yaboo Fence Co. · shop board'})); return; }
   const all=[...S.crews,...S.jobs,...S.equipment,...S.yard,S.board];
   let last=null; for(const d of all){ if(d.updatedAt&&(!last||d.updatedAt>last.updatedAt)) last=d; }
-  const foot=$('foot'); foot.replaceChildren();
-  if(!last){ foot.append(h('span',{text:'No changes posted yet.'})); return; }
-  foot.append(h('span',{text:'Last change '+fmtWhen(last.updatedAt)+(last.updatedBy?' · '+last.updatedBy:'')}),
-              h('span',{text:S.editing?('Editing as '+(S.name||'editor')):(S.role==='crew'?('Crew · '+(S.name||'')):(S.canWrite?'Signed in as editor':''))}));
+  const who=(S.name||S.me.email||'')+' · '+((ROLES[S.role]||{}).label||S.role||'')+(isOffice()||S.me.all?'':' · '+visibleShops().map(s=>SHOP_BY[s].name).join(', '));
+  foot.append(h('span',{text:last?('Last change '+fmtWhen(last.updatedAt)+(last.updatedBy?' · '+last.updatedBy:'')):'No changes posted yet.'}),
+              h('span',{text:S.editing?'Editing · '+who:who}));
 }
 
 /* ---------- tabs, clock, theme, TV ---------- */
 function setTab(t,quiet){
-  if(!TABS.includes(t)) t='all';
+  const T=tabs();
+  if(!T.includes(t)) t=T[0]||'all';
   S.tab=t; ls.set('tab',t);
   try{ history.replaceState(null,'','#'+t); }catch(e){}
   if(S.tv&&!quiet) startRotate();
@@ -642,23 +696,40 @@ function setEditing(on){
   render();
 }
 function updateEditButton(){
-  const b=$('btnEdit');
-  if(S.role==='crew'){ b.textContent='Crew · '+(S.name||'signed in'); b.classList.add('on'); }
-  else { b.classList.toggle('on',S.editing); b.textContent=S.editing?'Editing':'Edit'; }
+  const b=$('btnEdit'), u=$('btnUser');
+  b.hidden=!S.canWrite;
+  b.classList.toggle('on',S.editing); b.textContent=S.editing?'Editing':'Edit';
+  if(!S.user){ u.textContent='Sign in'; u.classList.remove('on'); }
+  else { u.textContent=S.name||S.user.email||'Account'; u.classList.toggle('on',S.role==='crew'); }
 }
-function openCrewMenu(){
+async function doSignOut(){ closeSheet(); try{ await signOut(S.auth); }catch(e){} toast('Signed out.'); }
+function openAccount(){
+  const r=ROLES[S.role]||{label:S.role||''};
+  const shops=isOffice()||(S.me&&S.me.all)?'all shops':visibleShops().map(s=>SHOP_BY[s].name).join(', ')||'no shops';
   openSheet({
-    title:'Crew sign-in',
-    intro:'You are signed in as crew: you can post progress on jobs. Your name goes on every entry.',
-    values:{name:S.name||''},
-    fields:[{key:'name',label:'Your name',autocomplete:'name'}],
-    extra:h('div',{class:'acts',style:'border-top:1px solid var(--line);padding-top:.8rem'},h('span',{class:'spacer'}),
-      h('button',{class:'btn sm ghost',type:'button',text:'Sign out',onclick:async()=>{ closeSheet(); try{ await signOut(S.auth); }catch(e){} toast('Signed out.'); }})),
-    onSave:async v=>{ if(!v.name){ toast('Enter a name.'); return false; } S.name=v.name; ls.set('name',v.name); updateEditButton(); render(); return true; }
+    title:'Your account',
+    intro:(S.user&&S.user.email||'')+' · '+r.label+' · '+shops,
+    values:{pw1:'',pw2:''},
+    fields:[
+      {key:'pw1',label:'New password',type:'password',autocomplete:'new-password',half:true,hint:'At least 6 characters. Leave blank to keep your password.'},
+      {key:'pw2',label:'Repeat it',type:'password',autocomplete:'new-password',half:true}
+    ],
+    extra:h('div',{class:'acts',style:'border-top:1px solid var(--line);padding-top:.8rem'},
+      isAdmin()?h('button',{class:'btn sm',type:'button',text:'People',onclick:()=>{ closeSheet(); openPeople(); }}):null,
+      h('span',{class:'spacer'}),
+      h('button',{class:'btn sm ghost',type:'button',text:'Sign out',onclick:doSignOut})),
+    saveLabel:'Save',
+    onSave:async v=>{
+      if(!v.pw1&&!v.pw2) return true;
+      if(v.pw1.length<6){ toast('Password needs at least 6 characters.'); return false; }
+      if(v.pw1!==v.pw2){ toast('The two passwords do not match.'); return false; }
+      try{ await updatePassword(S.user,v.pw1); toast('Password changed.'); return true; }
+      catch(e){ const c=(e&&e.code)||''; if(c==='auth/requires-recent-login'){ toast('Sign out, sign back in, then change the password.'); } else toast('Could not change the password ('+c+').'); return false; }
+    }
   });
 }
 function rotateMs(){ const s=Number(S.board.rotateSec)||20; return Math.max(8,Math.min(300,s))*1000; }
-function startRotate(){ stopRotate(); S.rotateTimer=setInterval(()=>{ const i=TABS.indexOf(S.tab); setTab(TABS[(i+1)%TABS.length],true); },rotateMs()); }
+function startRotate(){ stopRotate(); S.rotateTimer=setInterval(()=>{ const T=tabs(); if(T.length<2) return; const i=T.indexOf(S.tab); setTab(T[(i+1)%T.length],true); },rotateMs()); }
 function stopRotate(){ if(S.rotateTimer){ clearInterval(S.rotateTimer); S.rotateTimer=null; } }
 async function wakeLock(){ try{ if(navigator.wakeLock&&!S.lock){ S.lock=await navigator.wakeLock.request('screen'); S.lock.addEventListener('release',()=>{ S.lock=null; }); } }catch(e){ S.lock=null; } }
 function releaseWake(){ try{ if(S.lock){ S.lock.release(); S.lock=null; } }catch(e){} }
@@ -685,10 +756,10 @@ function toast(msg){
 }
 
 /* ---------- writes ---------- */
-function stamp(d){ d.updatedAt=new Date().toISOString(); d.updatedBy=S.name||'editor'; return d; }
+function stamp(d){ d.updatedAt=new Date().toISOString(); d.updatedBy=S.name||(S.user&&S.user.email)||''; return d; }
 function writeErr(e){
   const code=(e&&e.code)||'';
-  if(code==='permission-denied'||code==='unauthenticated'){ S.canWrite=false; setEditing(false); toast('Your editor sign-in expired. Tap Edit and sign in again.'); }
+  if(code==='permission-denied'||code==='unauthenticated'){ toast('You don’t have permission for that change. If your access was just changed, reload the page.'); }
   else if(code==='resource-exhausted') toast('The board hit its daily free limit. It resets overnight.');
   else if(code==='unavailable') toast('No connection right now. The change will send when the board reconnects.');
   else toast('That change did not save. Try again.');
@@ -738,7 +809,7 @@ async function shrinkImage(file){
   } finally{ URL.revokeObjectURL(url); }
 }
 function pickFile(job){
-  if(!S.canWrite){ openSignIn(); return; }
+  if(!S.canWrite){ toast('Only office accounts can attach files.'); return; }
   let inp=$('filepick');
   if(!inp){ inp=h('input',{type:'file',id:'filepick',accept:'application/pdf,image/*',style:'position:fixed;left:-9999px;top:0;opacity:0'}); document.body.append(inp); }
   inp.value=''; inp.onchange=()=>{ const f=inp.files&&inp.files[0]; if(f) uploadFile(job,f); };
@@ -759,7 +830,7 @@ async function uploadFile(job,file){
       const b64=await blobToB64(blob.slice(i*CHUNK,(i+1)*CHUNK));
       await setDoc(doc(S.db,'files',id,'chunks',String(i)),{d:b64});
     }
-    await setDoc(doc(S.db,'files',id),stamp({jobId:job.id,name,type,size:blob.size,chunks,createdAt:new Date().toISOString()}));
+    await setDoc(doc(S.db,'files',id),stamp({jobId:job.id,shop:job.shop||'',name,type,size:blob.size,chunks,createdAt:new Date().toISOString()}));
     toast('Attached '+name);
   }catch(e){ writeErr(e); }
 }
@@ -884,40 +955,133 @@ function openSheet(o){
 const shopOpts=SHOPS.map(s=>({value:s.id,label:s.name}));
 
 function openSignIn(){
-  const crewOn=!!CREW_EMAIL;
   openSheet({
     title:'Sign in',
-    intro:crewOn?'Anyone can view the board. The crew password lets you post progress on jobs. The editor password lets you change anything. Your name is shown next to what you post.'
-                :'Anyone can view the board. Changing it takes the editor password. Your name is shown next to your changes.',
-    values:{name:S.name||'',role:ls.get('role')||'crew'},
+    intro:'Use the email and password the office gave you. This device stays signed in.',
+    values:{email:ls.get('email')||'',pw:''},
     fields:[
-      {key:'name',label:'Your name',placeholder:'e.g. Joe',autocomplete:'name',half:crewOn},
-      crewOn?{key:'role',label:'Sign in as',type:'select',half:true,options:[{value:'crew',label:'Crew (post progress)'},{value:'editor',label:'Editor (full access)'}]}:null,
+      {key:'email',label:'Email',type:'email',autocomplete:'username',inputmode:'email',placeholder:'you@yaboofence.com'},
       {key:'pw',label:'Password',type:'password',autocomplete:'current-password'}
-    ].filter(Boolean),
+    ],
+    extra:h('div',{class:'acts'},h('span',{class:'spacer'}),h('button',{class:'btn sm ghost',type:'button',text:'Forgot password',onclick:async()=>{
+      const em=($('f_email').value||'').trim().toLowerCase();
+      if(!em){ toast('Type your email first, then tap Forgot password.'); return; }
+      try{ await sendPasswordResetEmail(S.auth,em); toast('Reset link sent to '+em+' (if that account exists).'); }
+      catch(e){ toast('Could not send a reset link ('+((e&&e.code)||'error')+').'); }
+    }})),
     saveLabel:'Sign in',
     onSave:async v=>{
-      if(!v.name){ toast('Put your name in so the board shows who posted what.'); return false; }
-      if(!v.pw){ toast('Enter the password.'); return false; }
-      const role=crewOn&&v.role==='crew'?'crew':'editor';
-      S.name=v.name; ls.set('name',v.name);
+      const em=(v.email||'').trim().toLowerCase();
+      if(!em||!em.includes('@')){ toast('Enter your email.'); return false; }
+      if(!v.pw){ toast('Enter your password.'); return false; }
       try{
-        await signInWithEmailAndPassword(S.auth,role==='crew'?CREW_EMAIL:EDITOR_EMAIL,v.pw);
-        ls.set('role',role);
-        if(role==='editor'){ S.canWrite=true; setEditing(true); } else { toast('Signed in. Tap + Progress on a job to post what got done.'); }
+        await signInWithEmailAndPassword(S.auth,em,v.pw);
+        ls.set('email',em);
         return true;
       }catch(e){
         const c=(e&&e.code)||'';
-        if(c==='auth/wrong-password'||c==='auth/invalid-credential'||c==='auth/invalid-login-credentials') toast('Wrong '+role+' password.');
+        if(c==='auth/wrong-password'||c==='auth/invalid-credential'||c==='auth/invalid-login-credentials'||c==='auth/user-not-found') toast('Wrong email or password.');
         else if(c==='auth/too-many-requests') toast('Too many tries. Wait a few minutes.');
-        else if(c==='auth/user-not-found'||c==='auth/invalid-email') toast('The '+role+' account is not set up yet in Firebase → Authentication → Users.');
+        else if(c==='auth/invalid-email') toast('That is not a valid email address.');
         else if(c==='auth/network-request-failed') toast('No connection. Try again when you are back online.');
         else if(c==='auth/operation-not-allowed') toast('Email/password sign-in is not enabled in Firebase yet.');
+        else if(c==='auth/user-disabled') toast('That account has been disabled.');
         else toast('Could not sign in ('+c+').');
         return false;
       }
     }
   });
+}
+
+/* ---------- People (admin) ---------- */
+function shopChecks(values){
+  const box=h('div',{class:'checks'});
+  const all=h('input',{type:'checkbox',id:'p_all'}); all.checked=!!values.all;
+  box.append(h('label',{for:'p_all'},all,'All shops'));
+  const cbs={};
+  for(const s of SHOPS){ const c=h('input',{type:'checkbox',id:'p_'+s.id}); c.checked=!values.all&&(values.shops||[]).includes(s.id); cbs[s.id]=c; box.append(h('label',{for:'p_'+s.id},c,s.name)); }
+  const sync=()=>{ for(const c of Object.values(cbs)) c.disabled=all.checked; };
+  all.addEventListener('change',sync); sync();
+  box.read=()=>({all:all.checked,shops:all.checked?[]:Object.entries(cbs).filter(([k,c])=>c.checked).map(([k])=>k)});
+  return box;
+}
+function openPeople(){
+  const list=h('div',{class:'people'});
+  const people=[...S.users].sort((a,b)=>(a.name||a.id).localeCompare(b.name||b.id));
+  if(!people.length) list.append(h('div',{class:'quiet',text:'Nobody added yet. Add yourself first so your name shows on changes.'}));
+  for(const p of people){
+    const scope=p.all||p.role==='admin'||p.role==='office'?'all shops':(Array.isArray(p.shops)&&p.shops.length?p.shops.map(s=>(SHOP_BY[s]||{}).name||s).join(', '):'no shops');
+    list.append(h('div',{class:'person',role:'button',tabindex:'0',onclick:()=>openPerson(p),onkeydown:ev=>{ if(ev.key==='Enter') openPerson(p); }},
+      h('span',{class:'nm',text:p.name||p.id}),h('span',{class:'rl',text:(ROLES[p.role]||{}).label||p.role||''}),h('span',{class:'em',text:p.id+' · '+scope})));
+  }
+  const sh=$('sheet'); sh.replaceChildren(h('h3',{text:'People'}),
+    h('p',{class:'signin-note',text:'Everyone who can sign in to the board. Tap a person to change their role or shops. Passwords are set when a person is added; they can change their own under their name in the top bar.'}),
+    list,
+    h('div',{class:'acts'},h('button',{class:'btn pri',type:'button',text:'+ Add person',onclick:()=>openPerson(null)}),h('span',{class:'spacer'}),h('button',{class:'btn',type:'button',text:'Close',onclick:closeSheet})));
+  $('sheetbd').hidden=false;
+}
+function openPerson(p){
+  const isNew=!p;
+  const checks=shopChecks(p||{all:false,shops:[]});
+  const roleHelp=h('div',{class:'rolehelp',text:''});
+  const setHelp=r=>{ roleHelp.textContent=(ROLES[r]||{}).desc||''; checks.hidden=(r==='admin'||r==='office'); };
+  openSheet({
+    title:isNew?'Add person':'Edit person',
+    values:{name:p?p.name||'':'',email:p?p.id:'',role:p?p.role||'viewer':'viewer',pw:''},
+    fields:[
+      {key:'name',label:'Name (shown on their changes)',half:true,autocomplete:'off'},
+      {key:'email',label:'Email (their sign-in)',type:'email',half:true,inputmode:'email',autocomplete:'off',placeholder:'mike@yaboofence.com'},
+      {key:'role',label:'Role',type:'select',options:Object.entries(ROLES).map(([v,r])=>({value:v,label:r.label}))},
+      isNew?{key:'pw',label:'Starting password',type:'password',autocomplete:'new-password',hint:'At least 6 characters. Give it to them; they can change it themselves later.'}:null
+    ].filter(Boolean),
+    extra:h('div',{style:'display:flex;flex-direction:column;gap:.6rem'},roleHelp,h('div',{class:'f'},h('label',{text:'Shops they see'}),checks)),
+    saveLabel:isNew?'Add':'Save',
+    onSave:async v=>{
+      const em=(v.email||'').trim().toLowerCase();
+      if(!v.name){ toast('Enter a name.'); return false; }
+      if(!em||!em.includes('@')){ toast('Enter an email address for them to sign in with.'); return false; }
+      if(!isNew&&em!==p.id){ toast('Email can’t be changed. Remove this person and add them again.'); return false; }
+      const scope=checks.read();
+      if(!(v.role==='admin'||v.role==='office')&&!scope.all&&!scope.shops.length){ toast('Pick at least one shop, or All shops.'); return false; }
+      if(isNew){
+        if((v.pw||'').length<6){ toast('Starting password needs at least 6 characters.'); return false; }
+        if(S.users.some(u=>u.id===em)){ toast('That email is already on the list.'); return false; }
+        const made=await createLogin(em,v.pw);
+        if(made==='error') return false;
+        if(made==='exists') toast('That login already existed; access saved.');
+      }
+      const data=stamp({name:v.name.trim(),role:v.role,all:scope.all,shops:scope.shops,createdAt:p&&p.createdAt||new Date().toISOString()});
+      return setDocAt('users',em,data);
+    },
+    onDelete:isNew?null:async()=>{
+      if(p.id===(S.user&&S.user.email||'').toLowerCase()){ toast('You can’t remove yourself.'); return false; }
+      const ok=await delDocAt('users',p.id);
+      if(ok) toast('Removed from the board. To delete the login itself, use Firebase → Authentication → Users.');
+      return ok;
+    },
+    deleteLabel:'Remove access'
+  });
+  const sel=$('f_role'); setHelp(sel.value); sel.addEventListener('change',()=>setHelp(sel.value));
+}
+/* Creates the Firebase login for a new person without signing the admin out: a throwaway second app instance does the sign-up. */
+async function createLogin(email,pw){
+  let app2=null;
+  try{
+    app2=initializeApp(FIREBASE_CONFIG,'people-'+Date.now());
+    const a2=getAuth(app2);
+    await createUserWithEmailAndPassword(a2,email,pw);
+    try{ await signOut(a2); }catch(e){}
+    return 'created';
+  }catch(e){
+    const c=(e&&e.code)||'';
+    if(c==='auth/email-already-in-use') return 'exists';
+    if(c==='auth/weak-password') toast('Firebase rejected that password as too weak.');
+    else if(c==='auth/invalid-email') toast('That is not a valid email address.');
+    else if(c==='auth/operation-not-allowed') toast('Sign-up is turned off in Firebase → Authentication → Settings → User actions.');
+    else if(c==='auth/network-request-failed') toast('No connection.');
+    else toast('Could not create the login ('+c+').');
+    return 'error';
+  }finally{ if(app2){ try{ await deleteApp(app2); }catch(e){} } }
 }
 function openProgress(j){
   const u=unitOf(j), done=num(j.done), target=num(j.target);
@@ -1062,9 +1226,9 @@ function openBoard(){
     h('button',{class:'btn sm',type:'button',text:'Load',onclick:()=>{ closeSheet(); loadExamples(); }}),
     h('button',{class:'btn sm danger',type:'button',text:'Remove',onclick:()=>{ closeSheet(); removeExamples(); }}));
   const extra2=h('div',{class:'acts',style:'border-top:1px solid var(--line);padding-top:.8rem'},
-    h('span',{class:'quiet',text:'Editing as '+(S.name||'editor')}),h('span',{class:'spacer'}),
-    h('button',{class:'btn sm',type:'button',text:'Change name',onclick:()=>{ closeSheet(); openName(); }}),
-    h('button',{class:'btn sm ghost',type:'button',text:'Sign out',onclick:async()=>{ closeSheet(); try{ await signOut(S.auth); }catch(e){} toast('Signed out of editing.'); }}));
+    h('span',{class:'quiet',text:isAdmin()?'Who can sign in and what they see':'Signed in as '+(S.name||'')}),h('span',{class:'spacer'}),
+    isAdmin()?h('button',{class:'btn sm',type:'button',text:'People',onclick:()=>{ closeSheet(); openPeople(); }}):null,
+    h('button',{class:'btn sm ghost',type:'button',text:'Sign out',onclick:doSignOut}));
   openSheet({
     title:'Board settings',
     values:{notice:S.board.notice||'',rotateSec:S.board.rotateSec||20},
@@ -1080,10 +1244,6 @@ function openBoard(){
       return ok;
     }
   });
-}
-function openName(){
-  openSheet({ title:'Your name', values:{name:S.name||''}, fields:[{key:'name',label:'Shown next to your changes',autocomplete:'name'}],
-    onSave:async v=>{ if(!v.name){ toast('Enter a name.'); return false; } S.name=v.name; ls.set('name',v.name); render(); return true; } });
 }
 
 /* ---------- examples (opt-in, all flagged example:true) ---------- */
@@ -1145,15 +1305,57 @@ async function removeExamples(){
 }
 
 /* ---------- store ---------- */
-function subscribe(col){
-  onSnapshot(collection(S.db,col),{includeMetadataChanges:true},snap=>{
-    S[col]=snap.docs.map(d=>Object.assign({id:d.id},d.data()));
-    S.loaded=true;
-    setOffline(snap.metadata.fromCache&&!navigator.onLine);
-    scheduleRender();
-  },err=>{ console.warn('subscribe failed',col,err); toast('Could not read the board ('+(err.code||'error')+'). Check the Firestore rules.'); });
+function listen(ref,onData,label){
+  const un=onSnapshot(ref,{includeMetadataChanges:true},snap=>{ onData(snap); setOffline(snap.metadata.fromCache&&!navigator.onLine); scheduleRender(); },
+    err=>{ console.warn('subscribe failed',label,err); if(err&&err.code==='permission-denied') toast('The board refused to load '+label+'. If your access was just changed, reload; otherwise the Firestore rules need republishing.'); });
+  S.unsubs.push(un);
+}
+function docsOf(snap){ return snap.docs.map(d=>Object.assign({id:d.id},d.data())); }
+/* One collection, either whole (office / all-shops accounts) or one query per shop the person may see —
+   the rules only allow queries that are already limited to a shop the account can read. */
+function subscribeScoped(col,shopField){
+  S.parts[col]={};
+  const merge=()=>{ S[col]=Object.values(S.parts[col]).flat(); S.loaded=true; };
+  if(isOffice()||(S.me&&S.me.all===true)){
+    listen(collection(S.db,col),snap=>{ S.parts[col].all=docsOf(snap); merge(); },col);
+    return;
+  }
+  const shops=visibleShops();
+  if(!shops.length){ S[col]=[]; S.loaded=true; return; }
+  for(const sh of shops){
+    listen(query(collection(S.db,col),where(shopField,'==',sh)),snap=>{ S.parts[col][sh]=docsOf(snap); merge(); },col+'/'+sh);
+  }
+}
+function startData(){
+  stopData();
+  subscribeScoped('crews','shop');
+  subscribeScoped('jobs','shop');
+  subscribeScoped('equipment','shop');
+  subscribeScoped('files','shop');
+  if(canSee('yard')) listen(collection(S.db,'yard'),snap=>{ S.yard=docsOf(snap); S.loaded=true; },'yard'); else S.yard=[];
+  listen(doc(S.db,'config','board'),snap=>{ if(snap.exists()){ Object.assign(S.board,snap.data()); if(S.tv) startRotate(); } S.loaded=true; },'settings');
+  if(isAdmin()) listen(collection(S.db,'users'),snap=>{ S.users=docsOf(snap); },'people');
+}
+function stopData(){
+  for(const un of S.unsubs){ try{ un(); }catch(e){} }
+  S.unsubs=[]; S.parts={};
+  S.crews=[]; S.jobs=[]; S.equipment=[]; S.yard=[]; S.files=[]; S.users=[]; S.board={rotateSec:20,notice:''};
+  S.loaded=false;
 }
 function setOffline(on){ if(S.offline===on) return; S.offline=on; $('offline').hidden=!on; }
+function applyProfile(prof){
+  S.me=prof; S.profileMissing=!prof;
+  S.role=prof?prof.role:null;
+  S.name=prof?(prof.name||''):'';
+  S.canWrite=isOffice();
+  document.body.classList.toggle('crew',S.role==='crew');
+  if(!S.canWrite&&S.editing) setEditing(false);
+  if(S.canWrite&&ls.get('editing')==='1'&&!S.tv&&!S.editing) setEditing(true);
+  updateEditButton();
+  if(prof){ startData(); const T=tabs(); if(!T.includes(S.tab)) S.tab=T[0]||'all'; }
+  render();
+}
+let profileUnsub=null;
 function connect(){
   if(!FIREBASE_CONFIG.apiKey||FIREBASE_CONFIG.apiKey==='PASTE_ME'){ S.setupNeeded=true; render(); return; }
   const app=initializeApp(FIREBASE_CONFIG);
@@ -1162,26 +1364,36 @@ function connect(){
   catch(e){ db=getFirestore(app); }
   S.db=db; S.auth=getAuth(app);
   onAuthStateChanged(S.auth,u=>{
-    const email=((u&&u.email)||'').toLowerCase();
-    S.role=!u?null:((CREW_EMAIL&&email===CREW_EMAIL.toLowerCase())?'crew':'editor');
-    S.canWrite=S.role==='editor';
-    document.body.classList.toggle('crew',S.role==='crew');
-    if(!S.canWrite&&S.editing) setEditing(false);
-    if(S.canWrite&&ls.get('editing')==='1'&&!S.tv&&!S.editing) setEditing(true);
+    S.user=u||null;
+    if(profileUnsub){ try{ profileUnsub(); }catch(e){} profileUnsub=null; }
+    stopData(); S.me=null; S.profileMissing=false; S.role=null; S.canWrite=false;
+    document.body.classList.remove('crew'); if(S.editing) setEditing(false);
     updateEditButton(); render();
+    if(!u) return;
+    const email=(u.email||'').toLowerCase();
+    // Follow our own People entry live, so a role change takes effect without signing out.
+    profileUnsub=onSnapshot(doc(S.db,'users',email),snap=>{
+      let prof=snap.exists()?Object.assign({id:snap.id,email},snap.data()):null;
+      if(!prof&&email===ADMIN_EMAIL.toLowerCase()){
+        prof={id:email,email,name:ls.get('name')||'Admin',role:'admin',all:true,shops:[]};
+        setDoc(doc(S.db,'users',email),stamp({name:prof.name,role:'admin',all:true,shops:[],createdAt:new Date().toISOString()})).catch(()=>{});
+      }
+      const same=S.me&&prof&&S.me.role===prof.role&&S.me.all===prof.all&&JSON.stringify(S.me.shops||[])===JSON.stringify(prof.shops||[]);
+      if(same){ S.me=prof; S.name=prof.name||''; updateEditButton(); scheduleRender(); return; }
+      applyProfile(prof);
+    },err=>{ console.warn('profile',err); applyProfile(null); });
   });
-  ['crews','jobs','equipment','yard','files'].forEach(subscribe);
-  onSnapshot(doc(S.db,'config','board'),snap=>{ if(snap.exists()){ Object.assign(S.board,snap.data()); if(S.tv) startRotate(); } scheduleRender(); },()=>{});
 }
 
 /* ---------- boot ---------- */
 function boot(){
   const fromHash=(location.hash||'').slice(1);
-  S.tab=TABS.includes(fromHash)?fromHash:(TABS.includes(ls.get('tab'))?ls.get('tab'):'all');
+  S.tab=fromHash||ls.get('tab')||'all';
   S.name=ls.get('name')||'';
   applyTheme(ls.get('theme')||'auto');
   tickClock(); setInterval(tickClock,15000);
-  $('btnEdit').addEventListener('click',()=>{ if(S.role==='crew') openCrewMenu(); else if(S.editing) setEditing(false); else if(S.canWrite) setEditing(true); else openSignIn(); });
+  $('btnEdit').addEventListener('click',()=>{ if(S.editing) setEditing(false); else if(S.canWrite) setEditing(true); });
+  $('btnUser').addEventListener('click',()=>{ if(S.user) openAccount(); else openSignIn(); });
   $('btnTV').addEventListener('click',()=>setTV(!S.tv,true));
   $('btnTheme').addEventListener('click',cycleTheme);
   $('btnBoard').addEventListener('click',openBoard);
@@ -1189,7 +1401,7 @@ function boot(){
   $('sheetbd').addEventListener('click',ev=>{ if(ev.target===$('sheetbd')) closeSheet(); });
   document.addEventListener('keydown',ev=>{ if(ev.key==='Escape'&&!$('sheetbd').hidden) closeSheet(); });
   document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible'&&S.tv) wakeLock(); });
-  window.addEventListener('hashchange',()=>{ const t=(location.hash||'').slice(1); if(TABS.includes(t)&&t!==S.tab) setTab(t,true); });
+  window.addEventListener('hashchange',()=>{ const t=(location.hash||'').slice(1); if(tabs().includes(t)&&t!==S.tab) setTab(t,true); });
   window.addEventListener('online',()=>setOffline(false));
   if(ls.get('tv')==='1') setTV(true,false);
   render();
