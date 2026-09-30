@@ -91,7 +91,23 @@ main{flex:1; min-width:0}
 .btn:disabled{opacity:.5; cursor:default}
 .btn:focus-visible,.tab:focus-visible,.ovh:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
 body:not(.editing) .ed{display:none !important}
-body.tv .ed, body.tv .ctrl-edit{display:none !important}
+body:not(.editing):not(.crew) .cr{display:none !important}
+body:not(.editing):not(.crew) .jacts, body.tv .jacts{display:none !important}
+body.tv .ed, body.tv .cr, body.tv .ctrl-edit{display:none !important}
+/* progress */
+.pw{grid-column:1/-1; display:grid; grid-template-columns:minmax(0,1fr) auto; gap:.15rem .6rem; align-items:center; padding-top:.15rem}
+.pb{height:.5rem; background:var(--line); border-radius:3px; overflow:hidden; grid-column:1/-1}
+.pb i{display:block; height:100%; width:0; background:var(--accent); border-radius:3px; transition:width .3s}
+.pb.full i{background:var(--ok)}
+.pl{font-size:.85em; color:var(--muted); font-variant-numeric:tabular-nums; overflow-wrap:anywhere}
+.pl b{color:var(--fg); font-weight:600}
+.pp{font-family:var(--display); font-weight:700; font-size:1.05rem; font-variant-numeric:tabular-nums; line-height:1}
+.pp.full{color:var(--ok)}
+.ovj .pw{padding-top:.2rem} .ovj .pb{height:.4rem} .ovj .pl{font-size:.8em}
+.log{display:flex; flex-direction:column; gap:.3rem; border-top:1px solid var(--line); padding-top:.6rem}
+.log .row{display:grid; grid-template-columns:auto minmax(0,1fr); gap:.2rem .6rem; font-size:.9em; align-items:baseline}
+.log .amt{font-weight:600; font-variant-numeric:tabular-nums; white-space:nowrap}
+.log .who{color:var(--muted)} .log .nt{grid-column:2; color:var(--faint); font-size:.9em; overflow-wrap:anywhere}
 .acts{display:flex; gap:.5rem; flex-wrap:wrap; align-items:center}
 .spacer{flex:1}
 
@@ -259,11 +275,14 @@ const FIREBASE_CONFIG = {
   appId: "1:206131007766:web:6100903417a3ec010f0037"
 };
 const EDITOR_EMAIL = "joejr@yaboofence.com";
+/* Optional second account: crews sign in with this one and can ONLY post progress on jobs
+   (enforced by firestore.rules). Leave it "" to turn the crew role off. */
+const CREW_EMAIL = "crew@yaboofence.com";
 /* ========================================================================= */
 
 import { initializeApp } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js";
 import { getFirestore, initializeFirestore, persistentLocalCache, persistentMultipleTabManager,
-         collection, doc, onSnapshot, addDoc, setDoc, updateDoc, deleteDoc, getDoc}
+         collection, doc, onSnapshot, addDoc, setDoc, updateDoc, deleteDoc, getDoc, increment, arrayUnion}
   from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
 import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged }
   from "https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js";
@@ -289,10 +308,11 @@ const MON=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','De
 
 const S={
   crews:[],jobs:[],equipment:[],yard:[],files:[],board:{rotateSec:20,notice:''},
-  loaded:false, setupNeeded:false, db:null, auth:null, canWrite:false, name:'',
+  loaded:false, setupNeeded:false, db:null, auth:null, canWrite:false, role:null, name:'',
   editing:false, tab:'all', tv:false, busy:new Set(), rotateTimer:null, lock:null, offline:false,
   blobCache:new Map(), sheetCleanup:null
 };
+const UNITS={pcs:{short:'pcs',long:'pieces',step:'1'},lf:{short:'LF',long:'linear feet',step:'0.5'}};
 const PDFJS='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/6.3.289/';
 const CHUNK=700*1024, MAX_FILE=12*1024*1024, MAX_PAGES=30;
 
@@ -440,10 +460,28 @@ function renderOverview(){
   return grid;
 }
 function ovJob(j){
-  const it=[j.item,j.qty?'× '+j.qty:''].filter(Boolean).join(' ');
+  const it=itemLine(j);
   const n=filesFor(j.id).length;
   return h('div',{class:'ovj '+(j.stage||'')},h('span',{class:'p',text:j.project||'(no project)'}),dueChip(j)||h('span'),it?h('span',{class:'i',text:it}):null,
-    n?h('span',{class:'attc'},clip(),String(n)):null);
+    progressBar(j), n?h('span',{class:'attc'},clip(),String(n)):null);
+}
+/* progress helpers */
+function num(v){ const n=Number(v); return isFinite(n)?n:0; }
+function fmtN(n){ n=num(n); return Number.isInteger(n)?String(n):String(Math.round(n*10)/10); }
+function hasTarget(j){ return num(j.target)>0; }
+function unitOf(j){ return UNITS[j.unit]||UNITS.pcs; }
+function pct(j){ return hasTarget(j)?Math.min(100,Math.round(num(j.done)/num(j.target)*100)):0; }
+function itemLine(j){
+  if(hasTarget(j)) return [j.item,fmtN(j.target)+' '+unitOf(j).short].filter(Boolean).join(' · ');
+  return [j.item,j.qty?'× '+j.qty:''].filter(Boolean).join(' ');
+}
+function progressBar(j){
+  if(!hasTarget(j)) return null;
+  const p=pct(j), full=num(j.done)>=num(j.target);
+  return h('div',{class:'pw'},
+    h('span',{class:'pl'},h('b',{text:fmtN(j.done)}),' / '+fmtN(j.target)+' '+unitOf(j).short+' done'),
+    h('span',{class:'pp'+(full?' full':''),text:p+'%'}),
+    h('div',{class:'pb'+(full?' full':''),role:'progressbar','aria-valuenow':String(p),'aria-valuemin':'0','aria-valuemax':'100'},h('i',{style:'width:'+p+'%'})));
 }
 
 function renderShop(id){
@@ -515,22 +553,25 @@ function jobRow(j,showCrew){
   const row=h('div',{class:'job '+(j.stage||'')});
   row.append(h('div',{class:'p',text:j.project||'(no project)'}));
   row.append(dueChip(j)||h('span'));
-  const it=[j.item,j.qty?'× '+j.qty:''].filter(Boolean).join(' ');
+  const it=itemLine(j);
   const cn=showCrew?crewName(j.crewId):'';
   if(it||cn) row.append(h('div',{class:'i',text:[it,cn].filter(Boolean).join(' · ')}));
   if(j.note) row.append(h('div',{class:'n',text:j.note}));
+  const bar=progressBar(j); if(bar) row.append(bar);
   const files=filesFor(j.id);
   if(files.length){
     const atts=h('div',{class:'atts'});
     files.forEach(f=>atts.append(h('button',{class:'att',type:'button',title:f.name||'',onclick:()=>openViewer(f)},clip(),h('span',{class:'nm',text:f.name||'file'}))));
     row.append(atts);
   }
-  const acts=h('div',{class:'ed jacts'});
-  if(j.stage==='queued'||j.stage==='hold') acts.append(sm('Start',()=>setStage(j,'active')));
-  if(j.stage==='active') acts.append(sm('Done',()=>setStage(j,'done')),sm('Hold',()=>setStage(j,'hold')));
-  if(j.stage==='done') acts.append(sm('Reopen',()=>setStage(j,'active')));
-  acts.append(sm('Edit',()=>openJob(j)));
-  acts.append(sm('Attach',()=>pickFile(j)));
+  const acts=h('div',{class:'jacts'});
+  if(hasTarget(j)&&j.stage!=='done') acts.append(h('button',{class:'btn sm cr'+(S.role==='crew'?' pri':''),type:'button',text:'+ Progress',onclick:()=>openProgress(j)}));
+  const ed=(label,fn)=>h('button',{class:'btn sm ed',type:'button',text:label,onclick:fn});
+  if(j.stage==='queued'||j.stage==='hold') acts.append(ed('Start',()=>setStage(j,'active')));
+  if(j.stage==='active') acts.append(ed('Done',()=>setStage(j,'done')),ed('Hold',()=>setStage(j,'hold')));
+  if(j.stage==='done') acts.append(ed('Reopen',()=>setStage(j,'active')));
+  acts.append(ed('Edit',()=>openJob(j)));
+  acts.append(ed('Attach',()=>pickFile(j)));
   row.append(acts);
   return row;
 }
@@ -568,7 +609,7 @@ function renderFoot(){
   const foot=$('foot'); foot.replaceChildren();
   if(!last){ foot.append(h('span',{text:'No changes posted yet.'})); return; }
   foot.append(h('span',{text:'Last change '+fmtWhen(last.updatedAt)+(last.updatedBy?' · '+last.updatedBy:'')}),
-              h('span',{text:S.editing?('Editing as '+(S.name||'editor')):(S.canWrite?'Signed in as editor':'')}));
+              h('span',{text:S.editing?('Editing as '+(S.name||'editor')):(S.role==='crew'?('Crew · '+(S.name||'')):(S.canWrite?'Signed in as editor':''))}));
 }
 
 /* ---------- tabs, clock, theme, TV ---------- */
@@ -597,9 +638,24 @@ function setEditing(on){
   S.editing=!!on&&S.canWrite;
   document.body.classList.toggle('editing',S.editing);
   ls.set('editing',S.editing?'1':'0');
-  $('btnEdit').classList.toggle('on',S.editing);
-  $('btnEdit').textContent=S.editing?'Editing':'Edit';
+  updateEditButton();
   render();
+}
+function updateEditButton(){
+  const b=$('btnEdit');
+  if(S.role==='crew'){ b.textContent='Crew · '+(S.name||'signed in'); b.classList.add('on'); }
+  else { b.classList.toggle('on',S.editing); b.textContent=S.editing?'Editing':'Edit'; }
+}
+function openCrewMenu(){
+  openSheet({
+    title:'Crew sign-in',
+    intro:'You are signed in as crew: you can post progress on jobs. Your name goes on every entry.',
+    values:{name:S.name||''},
+    fields:[{key:'name',label:'Your name',autocomplete:'name'}],
+    extra:h('div',{class:'acts',style:'border-top:1px solid var(--line);padding-top:.8rem'},h('span',{class:'spacer'}),
+      h('button',{class:'btn sm ghost',type:'button',text:'Sign out',onclick:async()=>{ closeSheet(); try{ await signOut(S.auth); }catch(e){} toast('Signed out.'); }})),
+    onSave:async v=>{ if(!v.name){ toast('Enter a name.'); return false; } S.name=v.name; ls.set('name',v.name); updateEditButton(); render(); return true; }
+  });
 }
 function rotateMs(){ const s=Number(S.board.rotateSec)||20; return Math.max(8,Math.min(300,s))*1000; }
 function startRotate(){ stopRotate(); S.rotateTimer=setInterval(()=>{ const i=TABS.indexOf(S.tab); setTab(TABS[(i+1)%TABS.length],true); },rotateMs()); }
@@ -793,7 +849,7 @@ function buildForm(fields,values){
     let input;
     if(f.type==='select'){ input=h('select',{id:'f_'+f.key}); fillOptions(input,typeof f.options==='function'?f.options(values):f.options,values[f.key]!=null?String(values[f.key]):''); }
     else if(f.type==='textarea'){ input=h('textarea',{id:'f_'+f.key,rows:'2',placeholder:f.placeholder||''}); input.value=values[f.key]||''; }
-    else { input=h('input',{id:'f_'+f.key,type:f.type||'text',placeholder:f.placeholder||'',inputmode:f.inputmode||null,autocomplete:f.autocomplete||null}); input.value=values[f.key]!=null?String(values[f.key]):''; if(f.min!=null) input.min=f.min; if(f.max!=null) input.max=f.max; }
+    else { input=h('input',{id:'f_'+f.key,type:f.type||'text',placeholder:f.placeholder||'',inputmode:f.inputmode||null,autocomplete:f.autocomplete||null}); input.value=values[f.key]!=null?String(values[f.key]):''; if(f.min!=null) input.min=f.min; if(f.max!=null) input.max=f.max; if(f.step!=null) input.step=f.step; }
     ctl[f.key]=input;
     const wrap=h('div',{class:'f'+(f.half?' half':'')},h('label',{for:'f_'+f.key,text:f.label}),input);
     if(f.hint) wrap.append(h('span',{class:'hint',text:f.hint}));
@@ -828,28 +884,33 @@ function openSheet(o){
 const shopOpts=SHOPS.map(s=>({value:s.id,label:s.name}));
 
 function openSignIn(){
+  const crewOn=!!CREW_EMAIL;
   openSheet({
-    title:'Editor sign-in',
-    intro:'Anyone can view the board. Changing it takes the editor password. Your name is shown next to your changes.',
-    values:{name:S.name||''},
+    title:'Sign in',
+    intro:crewOn?'Anyone can view the board. The crew password lets you post progress on jobs. The editor password lets you change anything. Your name is shown next to what you post.'
+                :'Anyone can view the board. Changing it takes the editor password. Your name is shown next to your changes.',
+    values:{name:S.name||'',role:ls.get('role')||'crew'},
     fields:[
-      {key:'name',label:'Your name',placeholder:'e.g. Joe',autocomplete:'name'},
-      {key:'pw',label:'Editor password',type:'password',autocomplete:'current-password'}
-    ],
+      {key:'name',label:'Your name',placeholder:'e.g. Joe',autocomplete:'name',half:crewOn},
+      crewOn?{key:'role',label:'Sign in as',type:'select',half:true,options:[{value:'crew',label:'Crew (post progress)'},{value:'editor',label:'Editor (full access)'}]}:null,
+      {key:'pw',label:'Password',type:'password',autocomplete:'current-password'}
+    ].filter(Boolean),
     saveLabel:'Sign in',
     onSave:async v=>{
-      if(!v.name){ toast('Put your name in so the board shows who changed what.'); return false; }
-      if(!v.pw){ toast('Enter the editor password.'); return false; }
+      if(!v.name){ toast('Put your name in so the board shows who posted what.'); return false; }
+      if(!v.pw){ toast('Enter the password.'); return false; }
+      const role=crewOn&&v.role==='crew'?'crew':'editor';
+      S.name=v.name; ls.set('name',v.name);
       try{
-        await signInWithEmailAndPassword(S.auth,EDITOR_EMAIL,v.pw);
-        S.name=v.name; ls.set('name',v.name);
-        S.canWrite=true; setEditing(true);
+        await signInWithEmailAndPassword(S.auth,role==='crew'?CREW_EMAIL:EDITOR_EMAIL,v.pw);
+        ls.set('role',role);
+        if(role==='editor'){ S.canWrite=true; setEditing(true); } else { toast('Signed in. Tap + Progress on a job to post what got done.'); }
         return true;
       }catch(e){
         const c=(e&&e.code)||'';
-        if(c==='auth/wrong-password'||c==='auth/invalid-credential'||c==='auth/invalid-login-credentials') toast('Wrong password.');
+        if(c==='auth/wrong-password'||c==='auth/invalid-credential'||c==='auth/invalid-login-credentials') toast('Wrong '+role+' password.');
         else if(c==='auth/too-many-requests') toast('Too many tries. Wait a few minutes.');
-        else if(c==='auth/user-not-found'||c==='auth/invalid-email') toast('Editor account not set up yet. Check EDITOR_EMAIL and the Authentication → Users list.');
+        else if(c==='auth/user-not-found'||c==='auth/invalid-email') toast('The '+role+' account is not set up yet in Firebase → Authentication → Users.');
         else if(c==='auth/network-request-failed') toast('No connection. Try again when you are back online.');
         else if(c==='auth/operation-not-allowed') toast('Email/password sign-in is not enabled in Firebase yet.');
         else toast('Could not sign in ('+c+').');
@@ -858,25 +919,68 @@ function openSignIn(){
     }
   });
 }
+function openProgress(j){
+  const u=unitOf(j), done=num(j.done), target=num(j.target);
+  const log=(Array.isArray(j.log)?j.log:[]).slice(-8).reverse();
+  const logBox=h('div',{class:'log'},h('h4',{class:'eqlbl',text:'Recent entries'}));
+  if(!log.length) logBox.append(h('div',{class:'quiet',text:'Nothing posted yet.'}));
+  for(const e of log){
+    logBox.append(h('div',{class:'row'},
+      h('span',{class:'amt',text:(e.set?'set to ':'+')+fmtN(e.n)+' '+u.short}),
+      h('span',{class:'who',text:[e.by||'',e.at?fmtWhen(e.at):''].filter(Boolean).join(' · ')}),
+      e.note?h('span',{class:'nt',text:e.note}):null));
+  }
+  openSheet({
+    title:'Progress',
+    intro:(j.project||'')+(j.item?' · '+j.item:'')+' — '+fmtN(done)+' of '+fmtN(target)+' '+u.short+' done ('+pct(j)+'%)',
+    values:{n:'',mode:'add',note:''},
+    fields:[
+      {key:'n',label:'Completed ('+u.long+')',type:'number',inputmode:'decimal',min:'0',step:u.step,placeholder:'e.g. '+(u.short==='LF'?'60':'8'),half:true},
+      {key:'mode',label:'This number is',type:'select',half:true,options:[{value:'add',label:'What we did (add to total)'},{value:'set',label:'The new total'}]},
+      {key:'note',label:'Note (optional)',placeholder:'e.g. 6 panels welded, waiting on galv'}
+    ],
+    extra:logBox,
+    saveLabel:'Post',
+    onSave:async v=>{
+      const n=Number(v.n);
+      if(!(n>=0)||v.n===''){ toast('Enter the amount completed.'); return false; }
+      if(v.mode==='add'&&n===0){ toast('Enter more than 0, or choose "the new total" to correct it.'); return false; }
+      const entry={n:n,set:v.mode==='set',by:S.name||'',at:new Date().toISOString(),note:(v.note||'').slice(0,200)};
+      const data={log:arrayUnion(entry),updatedAt:entry.at,updatedBy:S.name||''};
+      data.done=v.mode==='set'?n:increment(n);
+      if(!S.db) return false;
+      try{ await updateDoc(doc(S.db,'jobs',j.id),data); }
+      catch(e){ writeErr(e); return false; }
+      const total=v.mode==='set'?n:done+n;
+      toast(total>=target?'Posted. That job is at 100%.':'Posted: '+fmtN(total)+' of '+fmtN(target)+' '+u.short+'.');
+      return true;
+    }
+  });
+}
 function openJob(j){
   const isNew=!j.id;
   openSheet({
     title:isNew?'New job':'Edit job',
-    values:{shop:j.shop||S.tab||'weld',crewId:j.crewId||'',project:j.project||'',item:j.item||'',qty:j.qty||'',due:j.due||'',stage:j.stage||'queued',note:j.note||''},
+    values:{shop:j.shop||S.tab||'weld',crewId:j.crewId||'',project:j.project||'',item:j.item||'',target:hasTarget(j)?fmtN(j.target):(j.qty||''),unit:j.unit||'pcs',done:hasTarget(j)?fmtN(j.done):'',due:j.due||'',stage:j.stage||'queued',note:j.note||''},
     fields:[
       {key:'shop',label:'Shop',type:'select',options:shopOpts,half:true},
       {key:'crewId',label:'Crew',type:'select',deps:'shop',options:v=>[{value:'',label:'Unassigned'},...crewsFor(v.shop).map(c=>({value:c.id,label:c.name||''}))],half:true},
       {key:'project',label:'Project / customer',placeholder:'e.g. Rec center perimeter fence'},
       {key:'item',label:'What is being built',placeholder:'e.g. 8 ft picket panels, 4 ft walk gate'},
-      {key:'qty',label:'Qty',placeholder:'e.g. 24',half:true},
+      {key:'target',label:'Quantity to make',type:'number',inputmode:'decimal',min:'0',step:'0.5',placeholder:'e.g. 24',half:true,hint:'Sets the progress bar. Leave blank for no bar.'},
+      {key:'unit',label:'Measured in',type:'select',half:true,options:Object.entries(UNITS).map(([v,u])=>({value:v,label:u.long+' ('+u.short+')'}))},
+      isNew?null:{key:'done',label:'Completed so far',type:'number',inputmode:'decimal',min:'0',step:'0.5',half:true,hint:'Correct the total here if a crew entry was wrong.'},
       {key:'due',label:'Needed by',type:'date',half:true},
       {key:'stage',label:'Stage',type:'select',options:Object.entries(STAGES).map(([v,l])=>({value:v,label:l}))},
       {key:'note',label:'Notes',type:'textarea',placeholder:'Finish, hardware, who to call, truck day…'}
-    ],
+    ].filter(Boolean),
     onSave:async v=>{
       if(!v.project){ toast('Give the job a project or customer name.'); return false; }
       const now=new Date().toISOString();
-      const data=stamp({shop:v.shop,crewId:v.crewId,project:v.project,item:v.item,qty:v.qty,due:v.due,stage:v.stage,note:v.note,createdAt:j.createdAt||now,doneAt:v.stage==='done'?(j.doneAt||now):''});
+      const target=Number(v.target)>0?Number(v.target):0;
+      const done=isNew?0:Math.max(0,Number(v.done)||0);
+      const data=stamp({shop:v.shop,crewId:v.crewId,project:v.project,item:v.item,qty:'',target:target,unit:UNITS[v.unit]?v.unit:'pcs',done:target?done:0,log:Array.isArray(j.log)?j.log:[],due:v.due,stage:v.stage,note:v.note,createdAt:j.createdAt||now,doneAt:v.stage==='done'?(j.doneAt||now):''});
+      if(!isNew&&target&&done!==num(j.done)) data.log=[...data.log,{n:done,set:true,by:S.name||'',at:now,note:'corrected in Edit job'}];
       if(j.example) data.example=true;
       return isNew?addDocTo('jobs',data):setDocAt('jobs',j.id,data);
     },
@@ -1001,18 +1105,18 @@ async function loadExamples(){
   try{
     for(const c of crewDefs){ const ref=await addDoc(collection(S.db,'crews'),mk(c)); ids[c.shop+'/'+c.name]=ref.id; }
     const jobs=[
-      {shop:'pvc',crew:'pvc/PVC line',project:'EXAMPLE — Rec center perimeter',item:'6 ft privacy panels',qty:'32',due:dayPlus(3),stage:'active',note:'White, tongue and groove'},
-      {shop:'pvc',crew:'pvc/PVC line',project:'EXAMPLE — Residential backyard',item:'4 ft picket + 1 walk gate',qty:'14',due:dayPlus(8),stage:'queued'},
-      {shop:'weld',crew:'weld/Weld 1',project:'EXAMPLE — Station platform railing',item:'Steel picket panels',qty:'12',due:dayPlus(1),stage:'active',note:'Galv after weld, 1-1/2" sq pickets'},
-      {shop:'weld',crew:'weld/Weld 1',project:'EXAMPLE — Cantilever slide gate',item:'26 ft gate frame',qty:'1',due:dayPlus(9),stage:'queued'},
-      {shop:'weld',crew:'weld/Weld 2',project:'EXAMPLE — Park entrance',item:'Double swing gate 14 ft',qty:'1',due:dayPlus(-1),stage:'active',note:'Waiting on hinges'},
-      {shop:'weld',crew:'',project:'EXAMPLE — Loading dock bollards',item:'Bollard sleeves',qty:'20',due:dayPlus(14),stage:'queued'},
-      {shop:'wood',crew:'wood/Wood crew',project:'EXAMPLE — School playground',item:'Stockade sections 6 ft',qty:'40',due:dayPlus(4),stage:'active'},
-      {shop:'yard',crew:'yard/Yard crew',project:'EXAMPLE — Truck loading',item:'Load Truck 3 for Bronx job',qty:'',due:dayPlus(0),stage:'active'},
-      {shop:'mech',crew:'mech/Mechanics',project:'EXAMPLE — Truck 2',item:'Brakes + inspection',qty:'',due:dayPlus(2),stage:'active'},
-      {shop:'mech',crew:'mech/Mechanics',project:'EXAMPLE — Auger',item:'Hydraulic hose replacement',qty:'',due:dayPlus(5),stage:'hold',note:'Part on order'}
+      {shop:'pvc',crew:'pvc/PVC line',project:'EXAMPLE — Rec center perimeter',item:'6 ft privacy panels',target:32,unit:'pcs',done:14,due:dayPlus(3),stage:'active',note:'White, tongue and groove'},
+      {shop:'pvc',crew:'pvc/PVC line',project:'EXAMPLE — Residential backyard',item:'4 ft picket + 1 walk gate',target:14,unit:'pcs',done:0,due:dayPlus(8),stage:'queued'},
+      {shop:'weld',crew:'weld/Weld 1',project:'EXAMPLE — Station platform railing',item:'Steel picket railing',target:186,unit:'lf',done:120,due:dayPlus(1),stage:'active',note:'Galv after weld, 1-1/2" sq pickets'},
+      {shop:'weld',crew:'weld/Weld 1',project:'EXAMPLE — Cantilever slide gate',item:'26 ft gate frame',target:1,unit:'pcs',done:0,due:dayPlus(9),stage:'queued'},
+      {shop:'weld',crew:'weld/Weld 2',project:'EXAMPLE — Park entrance',item:'Double swing gate 14 ft',target:2,unit:'pcs',done:2,due:dayPlus(-1),stage:'active',note:'Waiting on hinges'},
+      {shop:'weld',crew:'',project:'EXAMPLE — Loading dock bollards',item:'Bollard sleeves',target:20,unit:'pcs',done:0,due:dayPlus(14),stage:'queued'},
+      {shop:'wood',crew:'wood/Wood crew',project:'EXAMPLE — School playground',item:'Stockade sections 6 ft',target:320,unit:'lf',done:96,due:dayPlus(4),stage:'active'},
+      {shop:'yard',crew:'yard/Yard crew',project:'EXAMPLE — Truck loading',item:'Load Truck 3 for Bronx job',target:0,unit:'pcs',done:0,due:dayPlus(0),stage:'active'},
+      {shop:'mech',crew:'mech/Mechanics',project:'EXAMPLE — Truck 2',item:'Brakes + inspection',target:0,unit:'pcs',done:0,due:dayPlus(2),stage:'active'},
+      {shop:'mech',crew:'mech/Mechanics',project:'EXAMPLE — Auger',item:'Hydraulic hose replacement',target:0,unit:'pcs',done:0,due:dayPlus(5),stage:'hold',note:'Part on order'}
     ];
-    for(const j of jobs){ await addDoc(collection(S.db,'jobs'),mk({shop:j.shop,crewId:ids[j.crew]||'',project:j.project,item:j.item,qty:j.qty,due:j.due,stage:j.stage,note:j.note||'',doneAt:''})); }
+    for(const j of jobs){ const log=j.done?[{n:j.done,set:true,by:'EXAMPLE',at:now,note:''}]:[]; await addDoc(collection(S.db,'jobs'),mk({shop:j.shop,crewId:ids[j.crew]||'',project:j.project,item:j.item,qty:'',target:j.target,unit:j.unit,done:j.done,log:log,due:j.due,stage:j.stage,note:j.note||'',doneAt:''})); }
     const eq=[
       {shop:'weld',name:'Plasma table',status:'ok',note:''},
       {shop:'weld',name:'Ironworker',status:'service',note:'EXAMPLE — punch die worn'},
@@ -1057,7 +1161,15 @@ function connect(){
   try{ db=initializeFirestore(app,{localCache:persistentLocalCache({tabManager:persistentMultipleTabManager()})}); }
   catch(e){ db=getFirestore(app); }
   S.db=db; S.auth=getAuth(app);
-  onAuthStateChanged(S.auth,u=>{ S.canWrite=!!u; if(!u&&S.editing) setEditing(false); if(u&&ls.get('editing')==='1'&&!S.tv&&!S.editing) setEditing(true); render(); });
+  onAuthStateChanged(S.auth,u=>{
+    const email=((u&&u.email)||'').toLowerCase();
+    S.role=!u?null:((CREW_EMAIL&&email===CREW_EMAIL.toLowerCase())?'crew':'editor');
+    S.canWrite=S.role==='editor';
+    document.body.classList.toggle('crew',S.role==='crew');
+    if(!S.canWrite&&S.editing) setEditing(false);
+    if(S.canWrite&&ls.get('editing')==='1'&&!S.tv&&!S.editing) setEditing(true);
+    updateEditButton(); render();
+  });
   ['crews','jobs','equipment','yard','files'].forEach(subscribe);
   onSnapshot(doc(S.db,'config','board'),snap=>{ if(snap.exists()){ Object.assign(S.board,snap.data()); if(S.tv) startRotate(); } scheduleRender(); },()=>{});
 }
@@ -1069,7 +1181,7 @@ function boot(){
   S.name=ls.get('name')||'';
   applyTheme(ls.get('theme')||'auto');
   tickClock(); setInterval(tickClock,15000);
-  $('btnEdit').addEventListener('click',()=>{ if(S.editing) setEditing(false); else if(S.canWrite) setEditing(true); else openSignIn(); });
+  $('btnEdit').addEventListener('click',()=>{ if(S.role==='crew') openCrewMenu(); else if(S.editing) setEditing(false); else if(S.canWrite) setEditing(true); else openSignIn(); });
   $('btnTV').addEventListener('click',()=>setTV(!S.tv,true));
   $('btnTheme').addEventListener('click',cycleTheme);
   $('btnBoard').addEventListener('click',openBoard);

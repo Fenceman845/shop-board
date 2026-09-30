@@ -1,11 +1,31 @@
 rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
+
+    // Two accounts exist under Authentication → Users. Keep these in step with
+    // EDITOR_EMAIL and CREW_EMAIL at the top of index.html.
+    function isEditor() {
+      return request.auth != null && request.auth.token.email == 'joejr@yaboofence.com';
+    }
+    function isCrew() {
+      return request.auth != null && request.auth.token.email == 'crew@yaboofence.com';
+    }
+    // A crew update may only touch the progress fields on a job.
+    function progressOnly() {
+      return request.resource.data.diff(resource.data).affectedKeys()
+               .hasOnly(['done', 'log', 'updatedAt', 'updatedBy']);
+    }
+
     // Anyone with the link can read the board (the TV and phones never sign in).
-    // Only someone signed in with the editor account can change it.
+    // Editors can change anything. Crew can post progress on jobs and nothing else.
+    match /jobs/{jobId} {
+      allow read: if true;
+      allow create, delete: if isEditor();
+      allow update: if isEditor() || (isCrew() && progressOnly());
+    }
     match /{document=**} {
       allow read: if true;
-      allow write: if request.auth != null;
+      allow write: if isEditor();
     }
   }
 }
