@@ -18,7 +18,7 @@
   --accent:#ff8a1f; --accent-fg:#1a1004;
   --ok:#4cc063; --warn:#ecb83f; --bad:#f4625a;
   --ok-soft:rgba(76,192,99,.18); --warn-soft:rgba(236,184,63,.2); --bad-soft:rgba(244,98,90,.2);
-  --shop-pvc:#d9dfe6; --shop-weld:#ff8a1f; --shop-wood:#cf9052; --shop-yard:#6fc47a; --shop-mech:#63a8ec;
+  --shop-pvc:#d9dfe6; --shop-weld:#ff8a1f; --shop-wood:#cf9052; --shop-yard:#6fc47a; --shop-mech:#63a8ec; --shop-field:#b9a2f5; --accent-soft:rgba(255,138,31,.1);
   --display:"Barlow Condensed","Arial Narrow",Arial,sans-serif;
   --body:Barlow,"Helvetica Neue",Arial,sans-serif;
   --shadow:0 14px 44px rgba(0,0,0,.5);
@@ -32,7 +32,7 @@
     --accent:#e06f0a; --accent-fg:#ffffff;
     --ok:#1e8f3a; --warn:#b0761a; --bad:#c9352d;
     --ok-soft:rgba(30,143,58,.14); --warn-soft:rgba(176,118,26,.16); --bad-soft:rgba(201,53,45,.14);
-    --shop-pvc:#8a939c; --shop-weld:#e06f0a; --shop-wood:#a86d32; --shop-yard:#2e9a45; --shop-mech:#2e7fd2;
+    --shop-pvc:#8a939c; --shop-weld:#e06f0a; --shop-wood:#a86d32; --shop-yard:#2e9a45; --shop-mech:#2e7fd2; --shop-field:#7353c9; --accent-soft:rgba(224,111,10,.09);
     --shadow:0 14px 44px rgba(20,22,30,.2);
     --backdrop:rgba(30,32,40,.45);
     color-scheme:light;
@@ -44,7 +44,7 @@
   --accent:#e06f0a; --accent-fg:#ffffff;
   --ok:#1e8f3a; --warn:#b0761a; --bad:#c9352d;
   --ok-soft:rgba(30,143,58,.14); --warn-soft:rgba(176,118,26,.16); --bad-soft:rgba(201,53,45,.14);
-  --shop-pvc:#8a939c; --shop-weld:#e06f0a; --shop-wood:#a86d32; --shop-yard:#2e9a45; --shop-mech:#2e7fd2;
+  --shop-pvc:#8a939c; --shop-weld:#e06f0a; --shop-wood:#a86d32; --shop-yard:#2e9a45; --shop-mech:#2e7fd2; --shop-field:#7353c9; --accent-soft:rgba(224,111,10,.09);
   --shadow:0 14px 44px rgba(20,22,30,.2);
   --backdrop:rgba(30,32,40,.45);
   color-scheme:light;
@@ -250,6 +250,124 @@ img{max-width:100%}
 .sheet.wide .acts{position:sticky; bottom:calc(-1.2rem - env(safe-area-inset-bottom,0px)); background:var(--panel); padding-block:.6rem; margin-bottom:calc(-1.2rem - env(safe-area-inset-bottom,0px)); border-top:1px solid var(--line)}
 a.btn{text-decoration:none; display:inline-flex; align-items:center}
 .prog{height:4px; background:var(--line); border-radius:2px; overflow:hidden; width:100%} .prog i{display:block; height:100%; background:var(--accent); width:0; transition:width .2s}
+
+/* --- field tab ---
+   A job board (cards grouped by where the job is in its life cycle), a page per job, and a week grid of crews.
+   --stg is the stripe colour for a job's stage: neutral until it is ready, then accent / green / amber. */
+.tab.sep{margin-left:.7rem; position:relative}
+.tab.sep::before{content:""; position:absolute; left:-.55rem; top:18%; bottom:18%; width:1px; background:var(--line-2)}
+.st-awarded,.st-submittals,.st-fab{--stg:var(--line-2)}
+.st-ready{--stg:var(--accent)} .st-install{--stg:var(--ok)} .st-punch{--stg:var(--warn)} .st-closed{--stg:var(--faint)}
+.fbar{display:flex; gap:.6rem 1rem; align-items:center; flex-wrap:wrap}
+.fbar select{font:inherit; padding:.35em .6em; border:1px solid var(--line-2); border-radius:6px; background:var(--panel-2); color:var(--fg); max-width:100%}
+.fseg{display:inline-flex; border:1px solid var(--line-2); border-radius:6px; overflow:hidden; flex:none}
+.fseg button{font:inherit; font-weight:600; padding:.42em .95em; background:transparent; color:var(--muted); border:0; cursor:pointer; white-space:nowrap}
+.fseg button + button{border-left:1px solid var(--line-2)}
+.fseg button[aria-pressed="true"]{background:var(--panel-2); color:var(--fg)}
+.fseg button:focus-visible,.pchip:focus-visible,.fcard:focus-visible,.step:focus-visible,.wkj:focus-visible,.wkday:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
+.pipe{display:flex; gap:.35rem; overflow-x:auto; scrollbar-width:none; padding-block:2px}
+.pipe::-webkit-scrollbar{display:none}
+.pchip{font:inherit; font-size:.9rem; font-weight:600; padding:.35em .8em; border-radius:99px; border:1px solid var(--line-2); background:transparent; color:var(--muted); white-space:nowrap; cursor:pointer; display:inline-flex; gap:.5em; align-items:center; line-height:1.2}
+.pchip .n{font-variant-numeric:tabular-nums; color:var(--fg)}
+.pchip.zero{border-color:var(--line)} .pchip.zero .n{color:var(--faint)}
+.pchip[aria-pressed="true"]{background:var(--panel-2); color:var(--fg); border-color:var(--muted)}
+.fstage{display:flex; flex-direction:column; gap:.55rem}
+.fstage > h3{font-family:var(--display); font-size:1.3rem; text-transform:uppercase; letter-spacing:.04em; margin:0; line-height:1; display:flex; gap:.55rem; align-items:center}
+.fstage > h3 .bar{width:.3rem; height:1em; border-radius:2px; background:var(--stg)}
+.fstage > h3 .n{font-family:var(--body); font-size:.8rem; color:var(--muted); font-weight:600; letter-spacing:0}
+.fgrid{display:grid; gap:.8rem; grid-template-columns:repeat(auto-fill,minmax(min(100%,17rem),1fr))}
+/* All open: on a phone or laptop the stages stack, on-site work first (--o); on a wide screen they sit side by side in job order. */
+.fcols{display:flex; flex-direction:column; gap:1.1rem}
+.fcols .fstage{order:var(--o,0)}
+.fcols .fstage.none{display:none}
+@media (min-width:1360px){
+  .fcols{display:grid; grid-template-columns:repeat(6,minmax(0,1fr)); gap:.8rem; align-items:start}
+  .fcols .fstage{order:0}
+  .fcols .fstage.none{display:flex}
+  .fcols .fgrid{grid-template-columns:minmax(0,1fr)}
+  .fcols .fstage > h3{font-size:1.15rem; border-bottom:1px solid var(--line); padding-bottom:.5rem}
+}
+.fcard{background:var(--panel); border:1px solid var(--line); border-radius:6px; box-shadow:inset 3px 0 0 var(--stg,var(--line-2)); padding:.75rem .9rem .85rem 1rem; display:flex; flex-direction:column; gap:.4rem; min-width:0; cursor:pointer}
+.fcard:hover{border-color:var(--line-2)}
+.fcard .ftop{display:flex; flex-wrap:wrap; gap:.25rem .6rem; align-items:flex-start}
+.fcard .nm{font-weight:600; font-size:1.05rem; overflow-wrap:anywhere; flex:1 1 9rem; min-width:0}
+.fcard .ftop .due{flex:none}
+.fcard .sub{color:var(--muted); font-size:.92em; flex:1 1 100%; overflow-wrap:anywhere}
+.fcard .meta{color:var(--faint); font-size:.86em; overflow-wrap:anywhere}
+.fcard .onsite{font-size:.86em; color:var(--ok); font-weight:600; overflow-wrap:anywhere}
+.fj > .fnext{font-size:1rem}
+.fnext{font-size:.9em; color:var(--warn); border-left:2px solid var(--warn); padding-left:.55em; overflow-wrap:anywhere}
+.fpor{display:grid; grid-template-columns:minmax(0,1fr) auto; gap:.1rem .6rem; align-items:center; font-size:.88em}
+.fpor .pn{grid-column:1/-1; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+.fpor .pq{color:var(--muted); font-size:.92em; font-variant-numeric:tabular-nums; white-space:nowrap}
+.fpor .pb{height:.3rem; grid-column:1}
+.fcard .cacts{display:flex; gap:.4rem; flex-wrap:wrap; padding-top:.2rem}
+/* job page */
+.fj{display:flex; flex-direction:column; gap:1.1rem}
+.fjh{display:flex; align-items:flex-start; gap:.6rem 1rem; flex-wrap:wrap}
+.fjh h2{font-family:var(--display); font-size:2.3rem; text-transform:uppercase; margin:0; line-height:1; letter-spacing:.03em; flex:1; min-width:min(100%,14rem); overflow-wrap:anywhere}
+.fjh .sub{flex:1 1 100%; color:var(--muted); order:5; overflow-wrap:anywhere}
+.steps{display:flex; gap:.3rem; flex-wrap:wrap}
+.step{font:inherit; font-size:.85rem; font-weight:600; padding:.38em .8em; border-radius:99px; border:1px solid var(--line-2); background:transparent; color:var(--faint); white-space:nowrap; line-height:1.2}
+.step.past{color:var(--muted); background:var(--panel-2); border-color:transparent}
+.step.cur{background:var(--stg,var(--accent)); color:var(--bg); border-color:transparent}
+.step.cur.st-awarded,.step.cur.st-submittals,.step.cur.st-fab,.step.cur.st-closed{background:var(--fg)}
+button.step{cursor:pointer} button.step:hover{border-color:var(--muted)}
+.finfo{display:grid; grid-template-columns:repeat(auto-fill,minmax(min(100%,9rem),1fr)); gap:.7rem 1rem; background:var(--panel); border:1px solid var(--line); border-radius:6px; padding:.85rem .95rem; margin:0}
+.finfo div{min-width:0}
+.finfo dt{font-size:.68rem; text-transform:uppercase; letter-spacing:.12em; color:var(--muted)}
+.finfo dd{margin:.1rem 0 0; font-weight:500; overflow-wrap:anywhere}
+.finfo a{color:inherit; text-decoration-color:var(--line-2); text-underline-offset:.2em}
+.fsec{display:flex; flex-direction:column; gap:.55rem}
+.fsech{display:flex; align-items:center; gap:.6rem; flex-wrap:wrap}
+.fsech h3{font-family:var(--display); font-size:1.45rem; text-transform:uppercase; letter-spacing:.03em; margin:0; line-height:1; margin-right:auto}
+.plist{display:grid; gap:.5rem; grid-template-columns:repeat(auto-fill,minmax(min(100%,340px),1fr))}
+.plist .job{background:var(--panel); border:1px solid var(--line); border-left-width:3px}
+.plist .job.active{border-left-color:var(--ok)} .plist .job.queued{border-left-color:var(--line-2)} .plist .job.done{border-left-color:var(--faint)}
+.drow{display:grid; grid-template-columns:7.5rem minmax(0,1fr) auto; gap:.2rem .7rem; align-items:center; padding:.4rem .6rem; background:var(--panel); border:1px solid var(--line); border-radius:4px}
+.drow .d{font-weight:600; font-variant-numeric:tabular-nums; white-space:nowrap}
+.drow.today .d{color:var(--accent)}
+.drow .c{overflow-wrap:anywhere}
+.dlist{display:flex; flex-direction:column; gap:.3rem}
+.fnote{white-space:pre-wrap; margin:0; background:var(--panel); border:1px solid var(--line); border-radius:6px; padding:.75rem .95rem; overflow-wrap:anywhere}
+/* week schedule: a crews × days table; on a phone it shows one day at a time, picked from the day chips */
+.wkhead{display:flex; align-items:center; gap:.5rem; flex-wrap:wrap}
+.wkhead .lbl{font-family:var(--display); font-size:1.45rem; text-transform:uppercase; letter-spacing:.03em; line-height:1; margin-right:auto}
+.wkdays{display:none; gap:.3rem; overflow-x:auto; scrollbar-width:none}
+.wkday{font:inherit; font-size:.9rem; font-weight:600; padding:.35em .7em; border-radius:6px; border:1px solid var(--line-2); background:transparent; color:var(--muted); white-space:nowrap; cursor:pointer; line-height:1.2}
+.wkday.today{color:var(--accent)}
+.wkday[aria-pressed="true"]{background:var(--panel-2); color:var(--fg); border-color:var(--muted)}
+.wkwrap{border:1px solid var(--line); border-radius:6px; background:var(--panel); overflow-x:auto}
+@media (min-width:760px){ .wkt{min-width:820px} }
+.wkt{border-collapse:collapse; width:100%; table-layout:fixed}
+.wkt th,.wkt td{border-bottom:1px solid var(--line); border-right:1px solid var(--line); padding:.5rem .55rem; vertical-align:top; text-align:left; font-weight:400}
+.wkt tr:last-child > *{border-bottom:0} .wkt tr > :last-child{border-right:0}
+.wkt thead th{font-size:.72rem; text-transform:uppercase; letter-spacing:.11em; color:var(--muted); font-weight:600; white-space:nowrap}
+.wkt thead th.today{color:var(--accent)}
+.wkt td.today{background:var(--accent-soft)}
+.wkt .crewc{width:11.5rem}
+.wkt tbody th .nm{font-family:var(--display); font-weight:600; font-size:1.15rem; text-transform:uppercase; letter-spacing:.03em; line-height:1.1; display:block; overflow-wrap:anywhere}
+.wkt tbody th .lead{color:var(--muted); font-size:.85em; display:block; overflow-wrap:anywhere}
+.wkc{display:flex; flex-direction:column; gap:.3rem; align-items:stretch; min-height:1.7rem}
+.wkj{font:inherit; font-size:.86em; font-weight:600; text-align:left; padding:.3em .55em .3em .7em; border-radius:4px; background:var(--panel-2); border:0; color:var(--fg); cursor:pointer; overflow-wrap:anywhere; box-shadow:inset 3px 0 0 var(--stg,var(--line-2)); line-height:1.25}
+.wkj:hover{background:var(--line)}
+.wknote{font-size:.84em; color:var(--muted); overflow-wrap:anywhere}
+.wkc .btn{align-self:flex-start}
+.checks.col{flex-direction:column; flex-wrap:nowrap; gap:.5rem; max-height:16rem; overflow:auto; padding:.6rem .7rem; border:1px solid var(--line-2); border-radius:6px; background:var(--panel-2)}
+.f .checks.col label{align-items:flex-start; line-height:1.3}
+.f .checks.col input{margin-top:.2em; flex:none}
+.f .checks.col .st{color:var(--muted); font-size:.85em}
+@media (max-width:759px){
+  .wkdays{display:flex}
+  .wkt thead{display:none}
+  .wkt .crewc{width:38%}
+  .wkt td{display:none}
+  .wk[data-day="0"] td[data-d="0"],.wk[data-day="1"] td[data-d="1"],.wk[data-day="2"] td[data-d="2"],.wk[data-day="3"] td[data-d="3"],
+  .wk[data-day="4"] td[data-d="4"],.wk[data-day="5"] td[data-d="5"],.wk[data-day="6"] td[data-d="6"]{display:table-cell; border-right:0}
+  .wkt td.today{background:transparent}
+  .fjh h2{font-size:1.9rem}
+  .drow{grid-template-columns:6.5rem minmax(0,1fr) auto}
+}
 </style>
 </head>
 <body>
@@ -294,7 +412,7 @@ const ADMIN_EMAIL = "joejr@yaboofence.com";
 
 import { initializeApp, deleteApp } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js";
 import { getFirestore, initializeFirestore, persistentLocalCache, persistentMultipleTabManager,
-         collection, doc, onSnapshot, addDoc, setDoc, updateDoc, deleteDoc, getDoc, increment, arrayUnion, query, where }
+         collection, doc, onSnapshot, addDoc, setDoc, updateDoc, deleteDoc, getDoc, increment, arrayUnion, arrayRemove, query, where }
   from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
 import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, createUserWithEmailAndPassword, updatePassword, sendPasswordResetEmail }
   from "https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js";
@@ -329,7 +447,10 @@ const S={
   loaded:false, setupNeeded:false, db:null, auth:null, user:null, me:null, profileMissing:false,
   canWrite:false, role:null, name:'',
   editing:false, tab:'all', tv:false, busy:new Set(), rotateTimer:null, lock:null, offline:false,
-  blobCache:new Map(), sheetCleanup:null
+  blobCache:new Map(), sheetCleanup:null,
+  /* field tab */
+  fieldJobs:[], fieldCrews:[], fieldPortions:[], fieldFiles:[], fieldLoaded:false, fieldDenied:false,
+  fieldJob:null, fieldView:'board', fieldStage:'all', fieldPm:'all', weekOff:0, weekDay:null
 };
 const UNITS={pcs:{short:'pcs',long:'pieces',step:'1'},lf:{short:'LF',long:'linear feet',step:'0.5'}};
 
@@ -342,7 +463,8 @@ function visibleShops(){
   const list=Array.isArray(S.me.shops)?S.me.shops:[];
   return SHOPS.map(s=>s.id).filter(id=>list.includes(id));
 }
-function tabs(){ const v=visibleShops(); return v.length>1?['all',...v]:v; }
+function canField(){ return isOffice(); }
+function tabs(){ const v=visibleShops(); const t=v.length>1?['all',...v]:[...v]; if(canField()) t.push('field'); return t; }
 function canSee(shop){ return visibleShops().includes(shop); }
 const PDFJS='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/6.3.289/';
 const CHUNK=700*1024, MAX_FILE=12*1024*1024, MAX_PAGES=30;
@@ -417,7 +539,7 @@ function render(){
   const t=tabs();
   if(!t.length){ main.replaceChildren(renderGate('noshops')); renderNotice(); renderFoot(); return; }
   if(!t.includes(S.tab)) S.tab=t[0];
-  main.replaceChildren(S.tab==='all'?renderOverview():renderShop(S.tab));
+  main.replaceChildren(S.tab==='all'?renderOverview():S.tab==='field'?renderFieldTab():renderShop(S.tab));
   renderNotice();
   renderFoot();
 }
@@ -445,10 +567,10 @@ function renderTabs(){
   const nav=$('tabs'); nav.replaceChildren();
   if(!S.me) return;
   for(const t of tabs()){
-    const s=SHOP_BY[t];
-    const n=t==='all'?S.jobs.filter(j=>j.stage==='active').length:jobsFor(t,undefined,'active').length;
-    const b=h('button',{class:'tab',role:'tab','aria-selected':S.tab===t?'true':'false',type:'button',style:s?'--shop:var(--shop-'+t+')':'',onclick:()=>setTab(t)},
-      s?h('span',{class:'sw'}):null, s?s.name:'All shops', (S.loaded&&n)?h('span',{class:'n',text:String(n)}):null);
+    const s=SHOP_BY[t], isF=t==='field';
+    const n=t==='all'?S.jobs.filter(j=>j.stage==='active').length:isF?S.fieldJobs.filter(j=>j.stage==='install').length:jobsFor(t,undefined,'active').length;
+    const b=h('button',{class:'tab'+(isF?' sep':''),role:'tab','aria-selected':S.tab===t?'true':'false',type:'button',style:(s||isF)?'--shop:var(--shop-'+t+')':'',onclick:()=>setTab(t)},
+      (s||isF)?h('span',{class:'sw'}):null, isF?'Field':s?s.name:'All shops', (S.loaded&&n)?h('span',{class:'n',text:String(n)}):null);
     nav.append(b);
   }
   const sel=nav.querySelector('[aria-selected="true"]');
@@ -521,17 +643,17 @@ function ovJob(j){
 function num(v){ const n=Number(v); return isFinite(n)?n:0; }
 function fmtN(n){ n=num(n); return Number.isInteger(n)?String(n):String(Math.round(n*10)/10); }
 function hasTarget(j){ return num(j.target)>0; }
-function unitOf(j){ return UNITS[j.unit]||UNITS.pcs; }
+function unitOf(j){ return UNITS[j.unit]||FUNITS[j.unit]||UNITS.pcs; }
 function pct(j){ return hasTarget(j)?Math.min(100,Math.round(num(j.done)/num(j.target)*100)):0; }
 function itemLine(j){
   if(hasTarget(j)) return [j.item,fmtN(j.target)+' '+unitOf(j).short].filter(Boolean).join(' · ');
   return [j.item,j.qty?'× '+j.qty:''].filter(Boolean).join(' ');
 }
-function progressBar(j){
+function progressBar(j,word){
   if(!hasTarget(j)) return null;
   const p=pct(j), full=num(j.done)>=num(j.target);
   return h('div',{class:'pw'},
-    h('span',{class:'pl'},h('b',{text:fmtN(j.done)}),' / '+fmtN(j.target)+' '+unitOf(j).short+' done'),
+    h('span',{class:'pl'},h('b',{text:fmtN(j.done)}),' / '+fmtN(j.target)+' '+unitOf(j).short+' '+(word||'done')),
     h('span',{class:'pp'+(full?' full':''),text:p+'%'}),
     h('div',{class:'pb'+(full?' full':''),role:'progressbar','aria-valuenow':String(p),'aria-valuemin':'0','aria-valuemax':'100'},h('i',{style:'width:'+p+'%'})));
 }
@@ -658,7 +780,7 @@ function yardRow(y){
 function renderFoot(){
   const foot=$('foot'); foot.replaceChildren();
   if(!S.me){ foot.append(h('span',{text:S.user?'':'Yaboo Fence Co. · shop board'})); return; }
-  const all=[...S.crews,...S.jobs,...S.equipment,...S.yard,S.board];
+  const all=[...S.crews,...S.jobs,...S.equipment,...S.yard,S.board,...S.fieldJobs,...S.fieldPortions,...S.fieldCrews];
   let last=null; for(const d of all){ if(d.updatedAt&&(!last||d.updatedAt>last.updatedAt)) last=d; }
   const who=(S.name||S.me.email||'')+' · '+((ROLES[S.role]||{}).label||S.role||'')+(isOffice()||S.me.all?'':' · '+visibleShops().map(s=>SHOP_BY[s].name).join(', '));
   foot.append(h('span',{text:last?('Last change '+fmtWhen(last.updatedAt)+(last.updatedBy?' · '+last.updatedBy:'')):'No changes posted yet.'}),
@@ -667,9 +789,11 @@ function renderFoot(){
 
 /* ---------- tabs, clock, theme, TV ---------- */
 function setTab(t,quiet){
+  /* tapping Field while on a project page is the same as going back to the job board */
+  if(t==='field'&&S.tab==='field'&&S.fieldJob&&history.state&&history.state.fj){ history.back(); return; }
   const T=tabs();
   if(!T.includes(t)) t=T[0]||'all';
-  S.tab=t; ls.set('tab',t);
+  S.tab=t; S.fieldJob=null; ls.set('tab',t);
   try{ history.replaceState(null,'','#'+t); }catch(e){}
   if(S.tv&&!quiet) startRotate();
   render();
@@ -729,7 +853,7 @@ function openAccount(){
   });
 }
 function rotateMs(){ const s=Number(S.board.rotateSec)||20; return Math.max(8,Math.min(300,s))*1000; }
-function startRotate(){ stopRotate(); S.rotateTimer=setInterval(()=>{ const T=tabs(); if(T.length<2) return; const i=T.indexOf(S.tab); setTab(T[(i+1)%T.length],true); },rotateMs()); }
+function startRotate(){ stopRotate(); S.rotateTimer=setInterval(()=>{ if(S.tab==='field') return; const T=tabs().filter(t=>t!=='field'); if(T.length<2) return; const i=T.indexOf(S.tab); setTab(T[(i+1)%T.length],true); },rotateMs()); }
 function stopRotate(){ if(S.rotateTimer){ clearInterval(S.rotateTimer); S.rotateTimer=null; } }
 async function wakeLock(){ try{ if(navigator.wakeLock&&!S.lock){ S.lock=await navigator.wakeLock.request('screen'); S.lock.addEventListener('release',()=>{ S.lock=null; }); } }catch(e){ S.lock=null; } }
 function releaseWake(){ try{ if(S.lock){ S.lock.release(); S.lock=null; } }catch(e){} }
@@ -767,6 +891,7 @@ function writeErr(e){
 }
 async function addDocTo(col,data){ if(!S.db) return false; try{ await addDoc(collection(S.db,col),data); return true; }catch(e){ writeErr(e); return false; } }
 async function setDocAt(col,id,data){ if(!S.db) return false; try{ await setDoc(doc(S.db,col,id),data); return true; }catch(e){ writeErr(e); return false; } }
+async function mergeDocAt(col,id,data){ if(!S.db) return false; try{ await setDoc(doc(S.db,col,id),data,{merge:true}); return true; }catch(e){ writeErr(e); return false; } }
 async function updDocAt(col,id,data){ if(!S.db) return false; try{ await updateDoc(doc(S.db,col,id),data); return true; }catch(e){ writeErr(e); return false; } }
 async function delDocAt(col,id){ if(!S.db) return false; try{ await deleteDoc(doc(S.db,col,id)); return true; }catch(e){ writeErr(e); return false; } }
 async function setStage(j,stage){
@@ -808,37 +933,39 @@ async function shrinkImage(file){
     return out||file;
   } finally{ URL.revokeObjectURL(url); }
 }
-function pickFile(job){
+function pickFile(job,col){
   if(!S.canWrite){ toast('Only office accounts can attach files.'); return; }
   let inp=$('filepick');
   if(!inp){ inp=h('input',{type:'file',id:'filepick',accept:'application/pdf,image/*',style:'position:fixed;left:-9999px;top:0;opacity:0'}); document.body.append(inp); }
-  inp.value=''; inp.onchange=()=>{ const f=inp.files&&inp.files[0]; if(f) uploadFile(job,f); };
+  inp.value=''; inp.onchange=()=>{ const f=inp.files&&inp.files[0]; if(f) uploadFile(job,f,col); };
   inp.click();
 }
-async function uploadFile(job,file){
+async function uploadFile(job,file,col){
   if(!S.db||!job.id) return;
+  col=col||'files';
   let blob=file, type=file.type||'', name=(file.name||'file').slice(0,120);
   if(type.startsWith('image/')){ try{ blob=await shrinkImage(file); type='image/jpeg'; name=name.replace(/\.[^.]+$/,'')+'.jpg'; }catch(e){ toast('Could not read that photo.'); return; } }
   else if(type==='application/pdf'||/\.pdf$/i.test(name)){ type='application/pdf'; }
   else { toast('Attach a PDF or a photo.'); return; }
   if(blob.size>MAX_FILE){ toast('That file is over 12 MB. Scan at 150 dpi black-and-white and try again.'); return; }
   const chunks=Math.ceil(blob.size/CHUNK)||1;
-  const id=doc(collection(S.db,'files')).id;
+  const id=doc(collection(S.db,col)).id;
   try{
     for(let i=0;i<chunks;i++){
       toast('Uploading '+name+' … '+(i+1)+'/'+chunks);
       const b64=await blobToB64(blob.slice(i*CHUNK,(i+1)*CHUNK));
-      await setDoc(doc(S.db,'files',id,'chunks',String(i)),{d:b64});
+      await setDoc(doc(S.db,col,id,'chunks',String(i)),{d:b64});
     }
-    await setDoc(doc(S.db,'files',id),stamp({jobId:job.id,shop:job.shop||'',name,type,size:blob.size,chunks,createdAt:new Date().toISOString()}));
+    await setDoc(doc(S.db,col,id),stamp({jobId:job.id,shop:job.shop||(col==='fieldFiles'?'field':''),name,type,size:blob.size,chunks,createdAt:new Date().toISOString()}));
     toast('Attached '+name);
   }catch(e){ writeErr(e); }
 }
 async function deleteFile(meta){
   if(!S.db) return false;
+  const col=meta._col||'files';
   try{
-    for(let i=0;i<(meta.chunks||0);i++){ await deleteDoc(doc(S.db,'files',meta.id,'chunks',String(i))); }
-    await deleteDoc(doc(S.db,'files',meta.id));
+    for(let i=0;i<(meta.chunks||0);i++){ await deleteDoc(doc(S.db,col,meta.id,'chunks',String(i))); }
+    await deleteDoc(doc(S.db,col,meta.id));
     S.blobCache.delete(meta.id);
     return true;
   }catch(e){ writeErr(e); return false; }
@@ -847,7 +974,7 @@ async function loadFileBlob(meta){
   if(S.blobCache.has(meta.id)) return S.blobCache.get(meta.id);
   const parts=[];
   for(let i=0;i<(meta.chunks||0);i++){
-    const s=await getDoc(doc(S.db,'files',meta.id,'chunks',String(i)));
+    const s=await getDoc(doc(S.db,meta._col||'files',meta.id,'chunks',String(i)));
     if(!s.exists()) throw new Error('Part '+(i+1)+' of this file is missing.');
     parts.push(b64ToBytes(s.data().d||''));
   }
@@ -876,8 +1003,8 @@ async function renderPdf(blob,box){
 }
 async function openViewer(meta){
   const sh=$('sheet'); sh.classList.add('wide'); sh.replaceChildren(h('h3',{text:meta.name||'Attachment'}));
-  const job=S.jobs.find(j=>j.id===meta.jobId);
-  sh.append(h('p',{class:'signin-note',text:[job?job.project:'',meta.updatedBy?'added by '+meta.updatedBy:'',meta.createdAt?fmtWhen(meta.createdAt):''].filter(Boolean).join(' · ')}));
+  const job=meta._col==='fieldFiles'?fjob(meta.jobId):S.jobs.find(j=>j.id===meta.jobId);
+  sh.append(h('p',{class:'signin-note',text:[job?(job.project||job.name||''):'',meta.updatedBy?'added by '+meta.updatedBy:'',meta.createdAt?fmtWhen(meta.createdAt):''].filter(Boolean).join(' · ')}));
   const pages=h('div',{class:'pages'},h('div',{class:'quiet',text:'Loading…'}));
   const view=h('div',{class:'viewer'},pages);
   sh.append(view);
@@ -935,6 +1062,7 @@ function openSheet(o){
   const {form,ctl}=buildForm(o.fields,o.values||{});
   const sh=$('sheet'); sh.replaceChildren(h('h3',{text:o.title}));
   if(o.intro) sh.append(h('p',{class:'signin-note',text:o.intro}));
+  if(o.before) sh.append(o.before);
   sh.append(form);
   if(o.extra) sh.append(o.extra);
   const acts=h('div',{class:'acts'});
@@ -1083,7 +1211,9 @@ async function createLogin(email,pw){
     return 'error';
   }finally{ if(app2){ try{ await deleteApp(app2); }catch(e){} } }
 }
-function openProgress(j){
+function openProgress(j,o){
+  o=o||{};
+  const col=o.col||'jobs', word=o.word||'done';
   const u=unitOf(j), done=num(j.done), target=num(j.target);
   const log=(Array.isArray(j.log)?j.log:[]).slice(-8).reverse();
   const logBox=h('div',{class:'log'},h('h4',{class:'eqlbl',text:'Recent entries'}));
@@ -1096,12 +1226,12 @@ function openProgress(j){
   }
   openSheet({
     title:'Progress',
-    intro:(j.project||'')+(j.item?' · '+j.item:'')+' — '+fmtN(done)+' of '+fmtN(target)+' '+u.short+' done ('+pct(j)+'%)',
+    intro:(o.label||((j.project||'')+(j.item?' · '+j.item:'')))+' — '+fmtN(done)+' of '+fmtN(target)+' '+u.short+' '+word+' ('+pct(j)+'%)',
     values:{n:'',mode:'add',note:''},
     fields:[
-      {key:'n',label:'Completed ('+u.long+')',type:'number',inputmode:'decimal',min:'0',step:u.step,placeholder:'e.g. '+(u.short==='LF'?'60':'8'),half:true},
+      {key:'n',label:(o.verb||'Completed')+' ('+u.long+')',type:'number',inputmode:'decimal',min:'0',step:u.step,placeholder:'e.g. '+(u.short==='LF'?'60':'8'),half:true},
       {key:'mode',label:'This number is',type:'select',half:true,options:[{value:'add',label:'What we did (add to total)'},{value:'set',label:'The new total'}]},
-      {key:'note',label:'Note (optional)',placeholder:'e.g. 6 panels welded, waiting on galv'}
+      {key:'note',label:'Note (optional)',placeholder:o.notePh||'e.g. 6 panels welded, waiting on galv'}
     ],
     extra:logBox,
     saveLabel:'Post',
@@ -1112,11 +1242,12 @@ function openProgress(j){
       const entry={n:n,set:v.mode==='set',by:S.name||'',at:new Date().toISOString(),note:(v.note||'').slice(0,200)};
       const data={log:arrayUnion(entry),updatedAt:entry.at,updatedBy:S.name||''};
       data.done=v.mode==='set'?n:increment(n);
+      if(o.extra) Object.assign(data,o.extra);
       if(!S.db) return false;
-      try{ await updateDoc(doc(S.db,'jobs',j.id),data); }
+      try{ await updateDoc(doc(S.db,col,j.id),data); }
       catch(e){ writeErr(e); return false; }
       const total=v.mode==='set'?n:done+n;
-      toast(total>=target?'Posted. That job is at 100%.':'Posted: '+fmtN(total)+' of '+fmtN(target)+' '+u.short+'.');
+      toast(total>=target?'Posted. That '+(o.thing||'job')+' is at 100%.':'Posted: '+fmtN(total)+' of '+fmtN(target)+' '+u.short+'.');
       return true;
     }
   });
@@ -1246,6 +1377,538 @@ function openBoard(){
   });
 }
 
+/* =========================================================================
+   FIELD — projects out in the field. Office and administrator logins only for now.
+     fieldJobs      one document per project; its `days` map says which crews are on site each day
+     fieldPortions  the portions a project is broken into, each with its own quantity and progress
+     fieldCrews     the field crews / foremen (kept apart from the shop crews)
+     fieldFiles     drawings and paperwork on a project (same chunked storage as the shop attachments)
+   ========================================================================= */
+const FSTAGES=[
+  {id:'awarded',label:'Awarded'},
+  {id:'submittals',label:'Submittals'},
+  {id:'fab',label:'Fabrication'},
+  {id:'ready',label:'Ready to install'},
+  {id:'install',label:'Installing'},
+  {id:'punch',label:'Punch list'},
+  {id:'closed',label:'Closed out'}
+];
+FSTAGES.forEach((s,i)=>{ s.i=i; });
+const FSTAGE_BY=Object.fromEntries(FSTAGES.map(s=>[s.id,s]));
+/* The job board lists what is on site first, then what is coming, soonest first. */
+const FBOARD_ORDER=['install','punch','ready','fab','submittals','awarded'];
+const PSTATUS={none:'Not started',fab:'Fabrication',ready:'Ready to install',install:'Installing',done:'Complete'};
+const FUNITS={lf:{short:'LF',long:'linear feet',step:'0.5'},ea:{short:'EA',long:'each',step:'1'}};
+
+/* ---------- field: selectors ---------- */
+function fjob(id){ return S.fieldJobs.find(j=>j.id===id)||null; }
+function fcrew(id){ return S.fieldCrews.find(c=>c.id===id)||null; }
+function fcrewName(c){ return c?(c.name||c.lead||'Crew'):''; }
+function fcrewsSorted(){ return [...S.fieldCrews].sort((a,b)=>fcrewName(a).localeCompare(fcrewName(b))); }
+function fstage(j){ return FSTAGE_BY[j.stage]||FSTAGE_BY.awarded; }
+function byCreated(a,b){ const x=a.createdAt||'', y=b.createdAt||''; return x<y?-1:x>y?1:0; }
+function portionsFor(jobId){ return S.fieldPortions.filter(p=>p.jobId===jobId).sort(byCreated); }
+function ffilesFor(jobId){ return S.fieldFiles.filter(f=>f.jobId===jobId).sort(byCreated); }
+function crewsOn(j,date){ const a=j.days&&j.days[date]; return Array.isArray(a)?a.filter(id=>fcrew(id)):[]; }
+function jobsOnDay(crewId,date){ return S.fieldJobs.filter(j=>crewsOn(j,date).includes(crewId)).sort((a,b)=>(a.name||'').localeCompare(b.name||'')); }
+function dayNote(c,date){ const n=c&&c.dayNotes&&c.dayNotes[date]; return typeof n==='string'?n:''; }
+function fjobSort(a,b){ const ka=a.finish||a.start||'9999', kb=b.finish||b.start||'9999'; if(ka!==kb) return ka<kb?-1:1; return (a.name||'').localeCompare(b.name||''); }
+function dstr(d){ return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate()); }
+function addDays(s,n){ const d=parseDay(s); d.setDate(d.getDate()+n); return dstr(d); }
+/* Monday-first week containing today, shifted by `off` weeks. */
+function weekDates(off){ const t=todayStr(); const mon=addDays(t,-((parseDay(t).getDay()+6)%7)+off*7); return Array.from({length:7},(_,i)=>addDays(mon,i)); }
+function fmtDayY(s){ const d=parseDay(s); return d?fmtDay(s)+'/'+String(d.getFullYear()).slice(2):''; }
+function isoDay(iso){ const d=new Date(iso); return isNaN(d)?'':(d.getMonth()+1)+'/'+d.getDate()+'/'+String(d.getFullYear()).slice(2); }
+/* The day itself, or the day plus the rest of that work week. */
+function repeatDates(date,rep){
+  const out=[date]; if(rep!=='fri'&&rep!=='sat') return out;
+  const last=rep==='sat'?6:5, d=parseDay(date);
+  for(let i=0;i<7;i++){ d.setDate(d.getDate()+1); const w=d.getDay(); if(w===0||w>last) break; out.push(dstr(d)); }
+  return out;
+}
+const REPEAT_OPTS=[{value:'one',label:'This day only'},{value:'fri',label:'This day through Friday'},{value:'sat',label:'This day through Saturday'}];
+function fDateChip(j){
+  if(j.stage==='closed') return h('span',{class:'due ok',text:j.closedAt?'Closed '+isoDay(j.closedAt):'Closed'});
+  if(fstage(j).i<FSTAGE_BY.install.i&&j.start){
+    const n=daysUntil(j.start);
+    if(n<0) return h('span',{class:'due bad',text:'Start was '+fmtDay(j.start)});
+    if(n===0) return h('span',{class:'due warn',text:'Starts today'});
+    if(n===1) return h('span',{class:'due warn',text:'Starts tomorrow'});
+    return h('span',{class:'due',text:'Starts '+fmtDay(j.start)});
+  }
+  return j.finish?dueChip({due:j.finish,stage:''}):null;
+}
+function checklist(items,checked){
+  const box=h('div',{class:'checks col'}), cbs={};
+  items.forEach((it,i)=>{
+    const c=h('input',{type:'checkbox',id:'ck_'+i}); c.checked=checked.includes(it.value); cbs[it.value]=c;
+    box.append(h('label',{for:'ck_'+i},c,h('span',{},it.label,it.sub?h('span',{class:'st',text:' · '+it.sub}):null)));
+  });
+  box.read=()=>Object.keys(cbs).filter(k=>cbs[k].checked);
+  box.set=vals=>{ for(const k of Object.keys(cbs)) cbs[k].checked=vals.includes(k); };
+  return box;
+}
+
+/* ---------- field: navigation ---------- */
+function setFieldView(v){ S.fieldView=v; ls.set('fview',v); render(); }
+function openFieldPage(id){
+  S.fieldScroll=window.scrollY||0;
+  S.tab='field'; S.fieldJob=id; ls.set('tab','field');
+  try{ history.pushState({fj:1},'','#field/'+encodeURIComponent(id)); }catch(e){}
+  render(); window.scrollTo({top:0});
+}
+function closeFieldPage(){
+  if(history.state&&history.state.fj){ history.back(); return; }
+  setTab('field');
+}
+
+/* ---------- field: render ---------- */
+function renderFieldTab(){
+  if(S.fieldDenied) return renderFieldSetup();
+  if(!S.fieldLoaded) return h('div',{class:'msg',text:'Loading field projects…'});
+  return S.fieldJob?renderFieldJob(S.fieldJob):renderField();
+}
+function renderFieldSetup(){
+  return h('div',{class:'gate'},
+    h('h2',{text:'One step left for the Field tab'}),
+    h('p',{text:isAdmin()
+      ?'The Field tab is new, and the board’s security rules in Firebase need the matching update before it can load. In the Firebase console open Firestore Database → Rules, replace everything there with the firestore.rules file from the repo, and click Publish. Then reload this page.'
+      :'The Field tab is not switched on yet. The board administrator has one setting to publish first.'}),
+    h('p',{class:'quiet',text:'The shop tabs are not affected.'}));
+}
+function renderField(){
+  const wrap=h('section',{class:'sh',style:'--shop:var(--shop-field)'});
+  const today=todayStr();
+  const open=S.fieldJobs.filter(j=>fstage(j).id!=='closed');
+  const out=S.fieldCrews.filter(c=>jobsOnDay(c.id,today).length).length;
+  wrap.append(h('div',{class:'shh'},h('span',{class:'sw big'}),h('h2',{text:'Field'}),
+    h('div',{class:'stats'},stat(open.length,'open jobs'),stat(open.filter(j=>j.stage==='install').length,'installing'),S.fieldCrews.length?stat(out,'crews out today'):null),
+    h('div',{class:'acts ed'},
+      h('button',{class:'btn sm pri',type:'button',text:'+ Project',onclick:()=>openFieldJobForm({})}),
+      h('button',{class:'btn sm',type:'button',text:'+ Field crew',onclick:()=>openFieldCrew({})}))));
+  const bar=h('div',{class:'fbar'},h('div',{class:'fseg',role:'group','aria-label':'View'},
+    h('button',{type:'button','aria-pressed':S.fieldView==='board'?'true':'false',text:'Job board',onclick:()=>setFieldView('board')}),
+    h('button',{type:'button','aria-pressed':S.fieldView==='week'?'true':'false',text:'Crew schedule',onclick:()=>setFieldView('week')})));
+  wrap.append(bar);
+  if(S.fieldView==='week'){ wrap.append(renderWeek()); return wrap; }
+
+  if(!S.fieldJobs.length){
+    wrap.append(h('div',{class:'empty'},h('h3',{text:'No field projects yet'}),
+      h('p',{text:'Turn on Edit and add the projects you have going. Each one gets its own page where it is broken down into its portions, crew days and drawings.'}),
+      h('div',{class:'acts ed'},
+        h('button',{class:'btn pri',type:'button',text:'+ Project',onclick:()=>openFieldJobForm({})}),
+        h('button',{class:'btn',type:'button',text:'Load example projects',onclick:loadFieldExamples}))));
+    return wrap;
+  }
+  const pms=[...new Set(S.fieldJobs.map(j=>(j.pm||'').trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b));
+  const pm=pms.includes(S.fieldPm)?S.fieldPm:'all';
+  if(pms.length>1){
+    const sel=h('select',{'aria-label':'Project manager'});
+    fillOptions(sel,[{value:'all',label:'All project managers'},...pms.map(p=>({value:p,label:p}))],pm);
+    sel.addEventListener('change',()=>{ S.fieldPm=sel.value; ls.set('fpm',sel.value); render(); });
+    bar.append(sel);
+  }
+  const jobs=S.fieldJobs.filter(j=>pm==='all'||(j.pm||'').trim()===pm);
+  const inStage=id=>jobs.filter(j=>fstage(j).id===id);
+  const pipe=h('div',{class:'pipe'});
+  const chip=(id,label,n)=>h('button',{class:'pchip'+(n?'':' zero'),type:'button','aria-pressed':S.fieldStage===id?'true':'false',onclick:()=>{ S.fieldStage=id; render(); }},label,h('span',{class:'n',text:String(n)}));
+  pipe.append(chip('all','All open',jobs.filter(j=>fstage(j).id!=='closed').length));
+  FSTAGES.forEach(s=>pipe.append(chip(s.id,s.label,inStage(s.id).length)));
+  wrap.append(pipe);
+
+  const section=(s,list)=>{
+    const sec=h('div',{class:'fstage st-'+s.id+(list.length?'':' none'),style:'--o:'+FBOARD_ORDER.indexOf(s.id)},
+      h('h3',{},h('span',{class:'bar'}),s.label,h('span',{class:'n',text:String(list.length)})));
+    if(list.length){ const grid=h('div',{class:'fgrid'}); list.forEach(j=>grid.append(fieldCard(j))); sec.append(grid); }
+    else sec.append(h('div',{class:'quiet',text:'—'}));
+    return sec;
+  };
+  if(S.fieldStage==='all'){
+    const cols=h('div',{class:'fcols'});
+    FSTAGES.filter(s=>s.id!=='closed').forEach(s=>cols.append(section(s,inStage(s.id).sort(fjobSort))));
+    wrap.append(cols);
+    if(!jobs.some(j=>fstage(j).id!=='closed')) wrap.append(h('div',{class:'msg',text:'No open projects'+(pm==='all'?'.':' for '+pm+'.')}));
+  } else {
+    const s=FSTAGE_BY[S.fieldStage]||FSTAGES[0];
+    const list=inStage(s.id).sort(s.id==='closed'?(a,b)=>((b.closedAt||'')<(a.closedAt||'')?-1:1):fjobSort);
+    if(list.length) wrap.append(section(s,list));
+    else wrap.append(h('div',{class:'msg',text:'Nothing in '+s.label+' right now.'}));
+  }
+  return wrap;
+}
+function miniPortion(p){
+  const t=hasTarget(p);
+  return h('div',{class:'fpor'},h('span',{class:'pn',text:p.name||'(portion)'}),
+    t?h('div',{class:'pb'+(num(p.done)>=num(p.target)?' full':'')},h('i',{style:'width:'+pct(p)+'%'})):null,
+    h('span',{class:'pq',text:t?fmtN(p.done)+' / '+fmtN(p.target)+' '+unitOf(p).short:(PSTATUS[p.status]||PSTATUS.none)}));
+}
+function fieldCard(j){
+  const st=fstage(j);
+  const card=h('article',{class:'fcard st-'+st.id,role:'button',tabindex:'0','aria-label':'Open '+(j.name||'project')});
+  card.addEventListener('click',()=>openFieldPage(j.id));
+  card.addEventListener('keydown',ev=>{ if(ev.target===card&&(ev.key==='Enter'||ev.key===' ')){ ev.preventDefault(); openFieldPage(j.id); } });
+  const sub=[j.customer,j.location].filter(Boolean).join(' · ');
+  card.append(h('div',{class:'ftop'},h('span',{class:'nm',text:j.name||'(no name)'}),fDateChip(j)||h('span'),sub?h('span',{class:'sub',text:sub}):null));
+  const lead=fcrew(j.crewId);
+  const meta=[j.jobNo?'#'+j.jobNo:'',j.pm?'PM '+j.pm:'',lead?fcrewName(lead):''].filter(Boolean).join(' · ');
+  if(meta) card.append(h('div',{class:'meta',text:meta}));
+  if(st.id!=='closed'){
+    const on=crewsOn(j,todayStr()).map(id=>fcrewName(fcrew(id)));
+    if(on.length) card.append(h('div',{class:'onsite',text:'On site today: '+on.join(', ')}));
+    if(j.next) card.append(h('div',{class:'fnext',text:j.next}));
+  }
+  const pors=portionsFor(j.id);
+  pors.slice(0,3).forEach(p=>card.append(miniPortion(p)));
+  if(pors.length>3) card.append(h('div',{class:'quiet',text:'+'+(pors.length-3)+' more'}));
+  const n=ffilesFor(j.id).length;
+  if(n) card.append(h('span',{class:'attc'},clip(),String(n)));
+  const nx=FSTAGES[st.i+1];
+  if(nx) card.append(h('div',{class:'cacts ed'},h('button',{class:'btn sm',type:'button',text:'Move to '+nx.label+' ›',onclick:ev=>{ ev.stopPropagation(); setFieldStage(j,nx.id); }})));
+  return card;
+}
+
+/* A project's own page: stage, the basics, its portions, who is on site, and its drawings. */
+function renderFieldJob(id){
+  const j=fjob(id);
+  const back=h('div',{},h('button',{class:'btn sm',type:'button',text:'‹ Job board',onclick:closeFieldPage}));
+  if(!j) return h('section',{class:'fj'},back,h('div',{class:'empty'},h('h3',{text:'Project not found'}),h('p',{text:'It may have been deleted, or the link is an old one.'})));
+  const st=fstage(j), today=todayStr();
+  const wrap=h('section',{class:'fj st-'+st.id});
+  wrap.append(back);
+  wrap.append(h('div',{class:'fjh'},h('h2',{text:j.name||'(no name)'}),fDateChip(j),
+    h('div',{class:'acts ed'},h('button',{class:'btn sm',type:'button',text:'Edit project',onclick:()=>openFieldJobForm(j)}))));
+
+  const steps=h('div',{class:'steps',role:'group','aria-label':'Stage'});
+  FSTAGES.forEach(s=>{
+    const cls='step st-'+s.id+(s.i<st.i?' past':s.i===st.i?' cur':'');
+    steps.append(S.editing
+      ?h('button',{class:cls,type:'button',title:'Move to '+s.label,'aria-pressed':s.i===st.i?'true':'false',text:s.label,onclick:()=>setFieldStage(j,s.id)})
+      :h('span',{class:cls,text:s.label}));
+  });
+  wrap.append(steps);
+  if(j.next) wrap.append(h('div',{class:'fnext',text:j.next}));
+
+  const lead=fcrew(j.crewId);
+  const info=h('dl',{class:'finfo'});
+  const row=(k,v)=>info.append(h('div',{},h('dt',{text:k}),h('dd',{},v||'—')));
+  row('Customer / GC',j.customer);
+  row('Location',j.location?h('a',{href:'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(j.location),target:'_blank',rel:'noopener',text:j.location}):'');
+  row('Job #',j.jobNo);
+  row('Project manager',j.pm);
+  row('Foreman / crew',lead?fcrewName(lead)+(lead.lead&&lead.lead!==lead.name?' · '+lead.lead:''):'');
+  row('Start on site',j.start?fmtDayY(j.start):'');
+  row('Finish by',j.finish?fmtDayY(j.finish):'');
+  wrap.append(info);
+
+  const pors=portionsFor(j.id);
+  const psec=h('div',{class:'fsec'},h('div',{class:'fsech'},h('h3',{text:'Portions of the project'}),
+    h('button',{class:'btn sm pri ed',type:'button',text:'+ Portion',onclick:()=>openPortion({},j)})));
+  if(pors.length){ const list=h('div',{class:'plist'}); pors.forEach(p=>list.append(portionRow(p,j))); psec.append(list); }
+  else psec.append(h('div',{class:'quiet',text:'Nothing broken out yet. Add each portion of the job and track it on its own.'}));
+  wrap.append(psec);
+
+  const days=Object.keys(j.days||{}).filter(d=>crewsOn(j,d).length).sort();
+  const past=days.filter(d=>d<today), up=days.filter(d=>d>=today);
+  const csec=h('div',{class:'fsec'},h('div',{class:'fsech'},h('h3',{text:'Crew on site'}),
+    h('button',{class:'btn sm ed',type:'button',text:'+ Schedule crew',onclick:()=>openJobDay(j,null)})));
+  if(up.length){
+    const dl=h('div',{class:'dlist'});
+    up.slice(0,12).forEach(d=>dl.append(h('div',{class:'drow'+(d===today?' today':'')},
+      h('span',{class:'d',text:d===today?'Today':fmtDay(d)}),
+      h('span',{class:'c',text:crewsOn(j,d).map(c=>fcrewName(fcrew(c))).join(', ')}),
+      h('button',{class:'btn sm ed',type:'button',text:'Change',onclick:()=>openJobDay(j,d)}))));
+    csec.append(dl);
+    if(up.length>12) csec.append(h('div',{class:'quiet',text:'+'+(up.length-12)+' more days scheduled'}));
+  } else csec.append(h('div',{class:'quiet',text:S.fieldCrews.length?'No crew scheduled from today on.':'No field crews set up yet. Add them on the Field tab (+ Field crew), then schedule them here or on the Crew schedule.'}));
+  if(past.length){ const cd=past.reduce((n,d)=>n+crewsOn(j,d).length,0); csec.append(h('div',{class:'quiet',text:cd+' crew-day'+(cd===1?'':'s')+' on site before today · first day '+fmtDayY(past[0])})); }
+  wrap.append(csec);
+
+  const files=ffilesFor(j.id);
+  const fsec=h('div',{class:'fsec'},h('div',{class:'fsech'},h('h3',{text:'Drawings & paperwork'}),
+    h('button',{class:'btn sm ed',type:'button',text:'Attach',onclick:()=>pickFile({id:j.id,shop:'field'},'fieldFiles')})));
+  if(files.length){
+    const atts=h('div',{class:'atts'});
+    files.forEach(f=>atts.append(h('button',{class:'att',type:'button',title:f.name||'',onclick:()=>openViewer(f)},clip(),h('span',{class:'nm',text:f.name||'file'}))));
+    fsec.append(atts);
+  } else fsec.append(h('div',{class:'quiet',text:'Nothing attached. PDFs or photos, up to 12 MB each.'}));
+  wrap.append(fsec);
+
+  if(j.note) wrap.append(h('div',{class:'fsec'},h('div',{class:'fsech'},h('h3',{text:'Notes'})),h('p',{class:'fnote',text:j.note})));
+  return wrap;
+}
+function portionRow(p,j){
+  const cls=p.status==='install'?'active':p.status==='done'?'done':'queued';
+  const row=h('div',{class:'job '+cls});
+  row.append(h('div',{class:'p',text:p.name||'(portion)'}));
+  row.append(h('span',{class:'due'+(p.status==='done'?' ok':''),text:PSTATUS[p.status]||PSTATUS.none}));
+  if(p.note) row.append(h('div',{class:'n',text:p.note}));
+  const bar=progressBar(p,'installed'); if(bar) row.append(bar);
+  const acts=h('div',{class:'jacts'});
+  if(hasTarget(p)&&p.status!=='done') acts.append(h('button',{class:'btn sm cr',type:'button',text:'+ Progress',onclick:()=>postPortion(p,j)}));
+  acts.append(h('button',{class:'btn sm ed',type:'button',text:'Edit',onclick:()=>openPortion(p,j)}));
+  row.append(acts);
+  return row;
+}
+
+/* Crews × days for one week. Tap a job to open its page; in Edit, each cell can be assigned. */
+function renderWeek(){
+  const dates=weekDates(S.weekOff), today=todayStr(), crews=fcrewsSorted();
+  const box=h('div',{class:'fsec'});
+  const first=parseDay(dates[0]);
+  const go=n=>{ S.weekOff=n; S.weekDay=null; render(); };
+  box.append(h('div',{class:'wkhead'},h('span',{class:'lbl',text:'Week of '+MON[first.getMonth()]+' '+first.getDate()}),
+    h('button',{class:'btn sm',type:'button',text:'‹','aria-label':'Previous week',onclick:()=>go(S.weekOff-1)}),
+    S.weekOff!==0?h('button',{class:'btn sm',type:'button',text:'This week',onclick:()=>go(0)}):null,
+    h('button',{class:'btn sm',type:'button',text:'›','aria-label':'Next week',onclick:()=>go(S.weekOff+1)})));
+  if(!crews.length){
+    box.append(h('div',{class:'empty'},h('h3',{text:'No field crews yet'}),
+      h('p',{text:'Turn on Edit and add each field crew or foreman. Then put them on jobs day by day here.'}),
+      h('div',{class:'acts ed'},h('button',{class:'btn pri',type:'button',text:'+ Field crew',onclick:()=>openFieldCrew({})}))));
+    return box;
+  }
+  /* Sunday only takes up a column when something is on it, or while assigning. */
+  const sunUsed=crews.some(c=>jobsOnDay(c.id,dates[6]).length||dayNote(c,dates[6]));
+  const show=dates.map((d,i)=>i<6||sunUsed||S.editing);
+  let sel=S.weekDay;
+  if(sel==null||!show[sel]){ const ti=dates.indexOf(today); sel=ti>=0&&show[ti]?ti:0; }
+  const wk=h('div',{class:'wk','data-day':String(sel)});
+  const chips=h('div',{class:'wkdays'});
+  const hr=h('tr',{},h('th',{class:'crewc',text:'Crew'}));
+  dates.forEach((d,i)=>{
+    if(!show[i]) return; const dd=parseDay(d);
+    chips.append(h('button',{class:'wkday'+(d===today?' today':''),type:'button','aria-pressed':i===sel?'true':'false',text:DOW[dd.getDay()]+' '+dd.getDate(),onclick:()=>{ S.weekDay=i; render(); }}));
+    hr.append(h('th',{class:d===today?'today':'',text:DOW[dd.getDay()]+' '+(dd.getMonth()+1)+'/'+dd.getDate()}));
+  });
+  wk.append(chips);
+  const tb=h('tbody');
+  for(const c of crews){
+    const tr=h('tr',{},h('th',{class:'crewc',scope:'row'},h('span',{class:'nm',text:fcrewName(c)}),
+      (c.lead&&c.lead!==c.name)?h('span',{class:'lead',text:c.lead}):null,
+      h('button',{class:'btn sm ed',type:'button',text:'Edit crew',style:'margin-top:.4rem',onclick:()=>openFieldCrew(c)})));
+    dates.forEach((d,i)=>{
+      if(!show[i]) return;
+      const jobs=jobsOnDay(c.id,d), note=dayNote(c,d);
+      const cell=h('div',{class:'wkc'});
+      jobs.forEach(j=>cell.append(h('button',{class:'wkj st-'+fstage(j).id,type:'button',text:j.name||'(no name)',onclick:()=>openFieldPage(j.id)})));
+      if(note) cell.append(h('span',{class:'wknote',text:note}));
+      if(!jobs.length&&!note) cell.append(h('span',{class:'quiet',text:'—'}));
+      cell.append(h('button',{class:'btn sm ed',type:'button',text:(jobs.length||note)?'Change':'+ Assign',onclick:()=>openCrewDay(c,d)}));
+      tr.append(h('td',{class:d===today?'today':'','data-d':String(i)},cell));
+    });
+    tb.append(tr);
+  }
+  wk.append(h('div',{class:'wkwrap'},h('table',{class:'wkt'},h('thead',{},hr),tb)));
+  box.append(wk);
+  const shown=dates.filter((d,i)=>show[i]);
+  const gaps=S.fieldJobs.filter(j=>j.stage==='install'&&!shown.some(d=>crewsOn(j,d).length));
+  if(gaps.length) box.append(h('div',{class:'quiet',text:'Installing, with no crew on this week’s schedule: '+gaps.map(j=>j.name||'(no name)').join(', ')}));
+  return box;
+}
+
+/* ---------- field: writes and forms ---------- */
+async function setFieldStage(j,stage){
+  if(!j.id||S.busy.has(j.id)||j.stage===stage) return; S.busy.add(j.id);
+  await mergeDocAt('fieldJobs',j.id,stamp({stage:stage,closedAt:stage==='closed'?new Date().toISOString():''}));
+  S.busy.delete(j.id);
+}
+async function deleteFieldJob(j,quiet){
+  if(!quiet&&S.tab==='field'&&S.fieldJob===j.id) closeFieldPage();
+  for(const f of ffilesFor(j.id)){ if(!(await deleteFile(f))) return false; }
+  for(const p of portionsFor(j.id)){ if(!(await delDocAt('fieldPortions',p.id))) return false; }
+  return delDocAt('fieldJobs',j.id);
+}
+function openFieldJobForm(j){
+  const isNew=!j.id;
+  openSheet({
+    title:isNew?'New project':'Edit project',
+    values:{name:j.name||'',customer:j.customer||'',jobNo:j.jobNo||'',location:j.location||'',pm:isNew?(S.name||''):(j.pm||''),crewId:j.crewId||'',stage:j.stage||'awarded',start:j.start||'',finish:j.finish||'',next:j.next||'',note:j.note||''},
+    fields:[
+      {key:'name',label:'Project',placeholder:'e.g. Rec center perimeter fence'},
+      {key:'customer',label:'Customer / GC',half:true},
+      {key:'jobNo',label:'Job #',half:true},
+      {key:'location',label:'Location',placeholder:'Street address or site, town'},
+      {key:'pm',label:'Project manager',half:true,autocomplete:'off'},
+      {key:'crewId',label:'Foreman / crew',type:'select',half:true,options:[{value:'',label:'Not assigned'},...fcrewsSorted().map(c=>({value:c.id,label:fcrewName(c)}))]},
+      {key:'stage',label:'Stage',type:'select',options:FSTAGES.map(s=>({value:s.id,label:s.label}))},
+      {key:'start',label:'Start on site',type:'date',half:true},
+      {key:'finish',label:'Finish by',type:'date',half:true},
+      {key:'next',label:'Next step / waiting on',placeholder:'e.g. Waiting on approved shop drawings'},
+      {key:'note',label:'Notes',type:'textarea',placeholder:'Site contact, access, working hours…'}
+    ],
+    onSave:async v=>{
+      if(!v.name){ toast('Give the project a name.'); return false; }
+      const now=new Date().toISOString();
+      const stage=FSTAGE_BY[v.stage]?v.stage:'awarded';
+      const data=stamp({name:v.name,customer:v.customer,jobNo:v.jobNo,location:v.location,pm:v.pm,crewId:v.crewId,stage:stage,start:v.start,finish:v.finish,next:v.next,note:v.note,createdAt:j.createdAt||now,closedAt:stage==='closed'?(j.closedAt||now):''});
+      if(j.example) data.example=true;
+      /* merge, so the crew days already on the project are kept */
+      if(!isNew) return mergeDocAt('fieldJobs',j.id,data);
+      data.days={};
+      if(!S.db) return false;
+      try{ const ref=await addDoc(collection(S.db,'fieldJobs'),data); openFieldPage(ref.id); return true; }
+      catch(e){ writeErr(e); return false; }
+    },
+    onDelete:isNew?null:()=>deleteFieldJob(j)
+  });
+  /* offer the PM names already on the board, so the PM filter doesn't split on spelling */
+  const pms=[...new Set(S.fieldJobs.map(x=>(x.pm||'').trim()).filter(Boolean))];
+  const inp=$('f_pm');
+  if(inp&&pms.length){ inp.setAttribute('list','pmlist'); $('sheet').append(h('datalist',{id:'pmlist'},pms.map(p=>h('option',{value:p})))); }
+}
+function openPortion(p,j){
+  const isNew=!p.id;
+  openSheet({
+    title:isNew?'New portion':'Edit portion',
+    intro:j.name||'',
+    values:{name:p.name||'',target:hasTarget(p)?fmtN(p.target):'',unit:FUNITS[p.unit]?p.unit:'lf',done:hasTarget(p)?fmtN(p.done):'',status:PSTATUS[p.status]?p.status:'none',note:p.note||''},
+    fields:[
+      {key:'name',label:'Portion of the project',placeholder:'e.g. 8 ft chain link perimeter, double swing gate'},
+      {key:'target',label:'Quantity',type:'number',inputmode:'decimal',min:'0',step:'0.5',half:true,hint:'Sets the progress bar. Leave blank for no bar.'},
+      {key:'unit',label:'Measured in',type:'select',half:true,options:Object.entries(FUNITS).map(([v,u])=>({value:v,label:u.long+' ('+u.short+')'}))},
+      isNew?null:{key:'done',label:'Installed so far',type:'number',inputmode:'decimal',min:'0',step:'0.5',half:true,hint:'Correct the total here if an entry was wrong.'},
+      {key:'status',label:'Status',type:'select',half:true,options:Object.entries(PSTATUS).map(([v,l])=>({value:v,label:l}))},
+      {key:'note',label:'Notes',type:'textarea',placeholder:'Spec, finish, what it is waiting on…'}
+    ].filter(Boolean),
+    onSave:async v=>{
+      if(!v.name){ toast('Name this portion of the project.'); return false; }
+      const now=new Date().toISOString();
+      const target=Number(v.target)>0?Number(v.target):0;
+      const done=isNew?0:Math.max(0,Number(v.done)||0);
+      const data=stamp({jobId:j.id,name:v.name,target:target,unit:FUNITS[v.unit]?v.unit:'lf',done:target?done:0,log:Array.isArray(p.log)?p.log:[],status:PSTATUS[v.status]?v.status:'none',note:v.note,createdAt:p.createdAt||now});
+      if(!isNew&&target&&done!==num(p.done)) data.log=[...data.log,{n:done,set:true,by:S.name||'',at:now,note:'corrected in Edit portion'}];
+      if(p.example||j.example) data.example=true;
+      return isNew?addDocTo('fieldPortions',data):setDocAt('fieldPortions',p.id,data);
+    },
+    onDelete:isNew?null:()=>delDocAt('fieldPortions',p.id)
+  });
+}
+function postPortion(p,j){
+  /* the first quantity posted means it is being installed */
+  const early=!p.status||p.status==='none'||p.status==='fab'||p.status==='ready';
+  openProgress(p,{col:'fieldPortions',word:'installed',verb:'Installed',thing:'portion',label:(j.name||'')+' · '+(p.name||''),
+    notePh:'e.g. north run stretched, corner posts left',extra:early?{status:'install'}:null});
+}
+function openFieldCrew(c){
+  const isNew=!c.id;
+  openSheet({
+    title:isNew?'New field crew':'Edit field crew',
+    values:{name:c.name||'',lead:c.lead||'',members:(c.members||[]).join(', '),note:c.note||''},
+    fields:[
+      {key:'name',label:'Crew name',placeholder:'e.g. the foreman’s name, or the truck number'},
+      {key:'lead',label:'Foreman',half:true},
+      {key:'members',label:'Crew (comma separated)',half:true},
+      {key:'note',label:'Notes',type:'textarea',placeholder:'Truck, certifications, standing assignment…'}
+    ],
+    onSave:async v=>{
+      if(!v.name&&!v.lead){ toast('Give the crew a name or a foreman.'); return false; }
+      const data=stamp({name:v.name||v.lead,lead:v.lead,members:v.members.split(',').map(x=>x.trim()).filter(Boolean),note:v.note,createdAt:c.createdAt||new Date().toISOString()});
+      if(c.example) data.example=true;
+      /* merge, so the crew's day notes are kept */
+      return isNew?addDocTo('fieldCrews',data):mergeDocAt('fieldCrews',c.id,data);
+    },
+    onDelete:isNew?null:()=>delDocAt('fieldCrews',c.id)
+  });
+}
+/* One crew, one day (from the week grid): which jobs it is on. Whatever is ticked becomes that crew's day. */
+function openCrewDay(c,date){
+  const cur=jobsOnDay(c.id,date).map(j=>j.id);
+  const rank={install:0,punch:1,ready:2,fab:3,submittals:4,awarded:5};
+  const r=j=>{ const x=rank[fstage(j).id]; return x==null?9:x; };
+  const jobs=S.fieldJobs.filter(j=>fstage(j).id!=='closed'||cur.includes(j.id)).sort((a,b)=>r(a)-r(b)||(a.name||'').localeCompare(b.name||''));
+  const list=checklist(jobs.map(j=>({value:j.id,label:j.name||'(no name)',sub:fstage(j).label})),cur);
+  openSheet({
+    title:fcrewName(c)+' · '+fmtDay(date),
+    before:h('div',{class:'f'},h('label',{text:'On which job'}),jobs.length?list:h('div',{class:'quiet',text:'No open projects yet. Add a project first.'})),
+    values:{note:dayNote(c,date),rep:'one'},
+    fields:[
+      {key:'note',label:'Note for the day (optional)',placeholder:'e.g. shop day, off, rain date, half day'},
+      {key:'rep',label:'Apply to',type:'select',options:REPEAT_OPTS}
+    ],
+    onSave:async v=>{
+      const pick=list.read(), dates=repeatDates(date,v.rep);
+      for(const j of S.fieldJobs){
+        const days={}; let touched=false;
+        for(const d of dates){
+          const on=pick.includes(j.id), was=crewsOn(j,d).includes(c.id);
+          if(on&&!was){ days[d]=arrayUnion(c.id); touched=true; }
+          else if(!on&&was){ days[d]=arrayRemove(c.id); touched=true; }
+        }
+        if(touched&&!(await mergeDocAt('fieldJobs',j.id,stamp({days})))) return false;
+      }
+      const notes={}; let changed=false;
+      for(const d of dates){ if(dayNote(c,d)!==v.note){ notes[d]=v.note; changed=true; } }
+      if(changed&&!(await mergeDocAt('fieldCrews',c.id,stamp({dayNotes:notes})))) return false;
+      return true;
+    }
+  });
+}
+/* One job, one day (from the job's page): which crews are on it. */
+function openJobDay(j,date){
+  const crews=fcrewsSorted();
+  if(!crews.length){ toast('Add a field crew first: Field tab, + Field crew.'); return; }
+  const start=date||todayStr();
+  const list=checklist(crews.map(c=>({value:c.id,label:fcrewName(c),sub:c.lead&&c.lead!==c.name?c.lead:''})),crewsOn(j,start));
+  openSheet({
+    title:'Crew on site',
+    intro:j.name||'',
+    values:{date:start,rep:'one'},
+    fields:[
+      {key:'date',label:'Day',type:'date',half:true},
+      {key:'rep',label:'Apply to',type:'select',half:true,options:REPEAT_OPTS}
+    ],
+    extra:h('div',{class:'f'},h('label',{text:'Crews on this job that day'}),list),
+    onSave:async v=>{
+      if(!parseDay(v.date)){ toast('Pick a day.'); return false; }
+      const pick=list.read(), days={};
+      for(const d of repeatDates(v.date,v.rep)) days[d]=pick;
+      return mergeDocAt('fieldJobs',j.id,stamp({days}));
+    }
+  });
+  const di=$('f_date');
+  if(di) di.addEventListener('change',()=>{ if(parseDay(di.value)) list.set(crewsOn(j,di.value)); });
+}
+
+/* ---------- field: examples (opt-in, flagged example:true, removed with the rest under Board settings) ---------- */
+async function loadFieldExamples(){
+  if(!S.db) return;
+  toast('Loading example projects…');
+  const now=new Date().toISOString();
+  const mk=o=>stamp(Object.assign({example:true,createdAt:now},o));
+  const wk=weekDates(0), mon1=weekDates(1)[0], mon2=weekDates(2)[0];
+  const span=(from,to,ids)=>Object.fromEntries(wk.slice(from,to+1).map(d=>[d,ids]));
+  try{
+    const ids=[];
+    for(const c of [
+      {name:'EXAMPLE Crew A',lead:'Foreman A',members:['Installer','Helper']},
+      {name:'EXAMPLE Crew B',lead:'Foreman B',members:['Installer','Installer']},
+      {name:'EXAMPLE Crew C',lead:'Foreman C',members:['Welder','Helper']}
+    ]){ const ref=await addDoc(collection(S.db,'fieldCrews'),mk(Object.assign({note:'',dayNotes:{}},c))); ids.push(ref.id); }
+    const [A,B,C]=ids;
+    const jobs=[
+      {name:'EXAMPLE — Rec center perimeter fence',customer:'General contractor',location:'Bronx, NY',jobNo:'E-101',stage:'install',start:dayPlus(-6),finish:dayPlus(9),next:'',crewId:A,days:span(0,4,[A]),
+        portions:[{name:'8 ft chain link perimeter',target:1240,unit:'lf',done:680,status:'install'},{name:'Double swing gates',target:3,unit:'ea',done:1,status:'install'},{name:'Privacy slats',target:400,unit:'lf',done:0,status:'none'}]},
+      {name:'EXAMPLE — Station platform railing',customer:'Transit agency',location:'Brooklyn, NY',jobNo:'E-102',stage:'install',start:dayPlus(-2),finish:dayPlus(12),next:'Waiting on the second delivery of pickets',crewId:C,days:span(1,4,[C]),
+        portions:[{name:'Core drill and set posts',target:48,unit:'ea',done:30,status:'install'},{name:'Steel picket railing',target:186,unit:'lf',done:40,status:'install'}]},
+      {name:'EXAMPLE — Loading dock bollards',customer:'General contractor',location:'Jersey City, NJ',jobNo:'E-106',stage:'punch',start:dayPlus(-20),finish:dayPlus(2),next:'2 bollard covers to replace',crewId:B,days:span(0,1,[B]),
+        portions:[{name:'Bollards',target:20,unit:'ea',done:20,status:'done'}]},
+      {name:'EXAMPLE — School playground fence',customer:'School district',location:'Yonkers, NY',jobNo:'E-103',stage:'ready',start:mon1,finish:addDays(mon1,11),next:'Waiting on site access from the GC',crewId:B,days:{},
+        portions:[{name:'6 ft ornamental fence',target:520,unit:'lf',done:0,status:'ready'},{name:'Walk gates',target:2,unit:'ea',done:0,status:'fab'}]},
+      {name:'EXAMPLE — Cantilever slide gate',customer:'Property owner',location:'Newark, NJ',jobNo:'E-104',stage:'fab',start:mon2,finish:addDays(mon2,4),next:'Gate frame is in the welding shop',crewId:'',days:{},
+        portions:[{name:'26 ft cantilever gate',target:1,unit:'ea',done:0,status:'fab'},{name:'Gate posts and footings',target:3,unit:'ea',done:0,status:'none'}]},
+      {name:'EXAMPLE — Park entrance fence',customer:'Parks department',location:'Queens, NY',jobNo:'E-105',stage:'submittals',start:'',finish:dayPlus(45),next:'Shop drawings out for approval',crewId:'',days:{},portions:[]}
+    ];
+    for(const j of jobs){
+      const ref=await addDoc(collection(S.db,'fieldJobs'),mk({name:j.name,customer:j.customer,location:j.location,jobNo:j.jobNo,pm:S.name||'',crewId:j.crewId,stage:j.stage,start:j.start,finish:j.finish,next:j.next,note:'',days:j.days,closedAt:''}));
+      let n=0;
+      for(const p of j.portions){
+        const at=new Date(Date.now()+(n++)).toISOString();
+        await addDoc(collection(S.db,'fieldPortions'),mk({jobId:ref.id,name:p.name,target:p.target,unit:p.unit,done:p.done,log:p.done?[{n:p.done,set:true,by:'EXAMPLE',at:now,note:''}]:[],status:p.status,note:'',createdAt:at}));
+      }
+    }
+    toast('Example projects loaded. Everything it added is marked EXAMPLE.');
+  }catch(e){ writeErr(e); }
+}
+
 /* ---------- examples (opt-in, all flagged example:true) ---------- */
 function dayPlus(n){ const d=new Date(); d.setDate(d.getDate()+n); return d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate()); }
 async function loadExamples(){
@@ -1294,9 +1957,11 @@ async function loadExamples(){
   }catch(e){ writeErr(e); }
 }
 async function removeExamples(){
-  const items=[['crews',S.crews],['jobs',S.jobs],['equipment',S.equipment],['yard',S.yard]].flatMap(([col,arr])=>arr.filter(d=>d.example).map(d=>[col,d.id]));
-  if(!items.length){ toast('No example data on the board.'); return; }
-  toast('Removing '+items.length+' example items…');
+  const items=[['crews',S.crews],['jobs',S.jobs],['equipment',S.equipment],['yard',S.yard],['fieldCrews',S.fieldCrews]].flatMap(([col,arr])=>arr.filter(d=>d.example).map(d=>[col,d.id]));
+  const fjobs=S.fieldJobs.filter(d=>d.example);
+  if(!items.length&&!fjobs.length){ toast('No example data on the board.'); return; }
+  toast('Removing '+(items.length+fjobs.length)+' example items…');
+  for(const j of fjobs){ if(!(await deleteFieldJob(j,true))) return; }
   for(const [col,id] of items){
     if(col==='jobs'){ for(const f of filesFor(id)){ if(!(await deleteFile(f))) return; } }
     if(!(await delDocAt(col,id))) return;
@@ -1335,11 +2000,26 @@ function startData(){
   if(canSee('yard')) listen(collection(S.db,'yard'),snap=>{ S.yard=docsOf(snap); S.loaded=true; },'yard'); else S.yard=[];
   listen(doc(S.db,'config','board'),snap=>{ if(snap.exists()){ Object.assign(S.board,snap.data()); if(S.tv) startRotate(); } S.loaded=true; },'settings');
   if(isAdmin()) listen(collection(S.db,'users'),snap=>{ S.users=docsOf(snap); },'people');
+  if(canField()) startField();
+}
+/* Field data is office-only. If the rules in Firebase are older than this page, these come back
+   permission-denied; the Field tab then shows the one setup step instead of nagging every screen with a toast. */
+function listenField(col,onData){
+  const un=onSnapshot(collection(S.db,col),{includeMetadataChanges:true},snap=>{ onData(docsOf(snap)); S.fieldLoaded=true; scheduleRender(); },
+    err=>{ console.warn('field subscribe failed',col,err); if(err&&err.code==='permission-denied'){ S.fieldDenied=true; scheduleRender(); } });
+  S.unsubs.push(un);
+}
+function startField(){
+  listenField('fieldJobs',d=>{ S.fieldJobs=d; });
+  listenField('fieldCrews',d=>{ S.fieldCrews=d; });
+  listenField('fieldPortions',d=>{ S.fieldPortions=d; });
+  listenField('fieldFiles',d=>{ S.fieldFiles=d.map(x=>Object.assign(x,{_col:'fieldFiles'})); });
 }
 function stopData(){
   for(const un of S.unsubs){ try{ un(); }catch(e){} }
   S.unsubs=[]; S.parts={};
   S.crews=[]; S.jobs=[]; S.equipment=[]; S.yard=[]; S.files=[]; S.users=[]; S.board={rotateSec:20,notice:''};
+  S.fieldJobs=[]; S.fieldCrews=[]; S.fieldPortions=[]; S.fieldFiles=[]; S.fieldLoaded=false; S.fieldDenied=false;
   S.loaded=false;
 }
 function setOffline(on){ if(S.offline===on) return; S.offline=on; $('offline').hidden=!on; }
@@ -1386,9 +2066,26 @@ function connect(){
 }
 
 /* ---------- boot ---------- */
+/* The address is #<tab>, or #field/<project id> for a project's own page (so the phone's Back button returns to the job board). */
+function parseHash(){
+  const hs=(location.hash||'').slice(1); const m=hs.match(/^field\/(.+)$/);
+  let job=null; if(m){ try{ job=decodeURIComponent(m[1]); }catch(e){ job=m[1]; } }
+  return m?{tab:'field',job}:{tab:hs,job:null};
+}
+function route(){
+  const r=parseHash();
+  if(!tabs().includes(r.tab)) return;
+  if(r.tab===S.tab&&r.job===S.fieldJob) return;
+  const backToBoard=S.tab==='field'&&S.fieldJob&&r.tab==='field'&&!r.job;
+  S.tab=r.tab; S.fieldJob=r.job; ls.set('tab',r.tab);
+  if(S.tv) startRotate();
+  render();
+  window.scrollTo({top:backToBoard?(S.fieldScroll||0):0});
+}
 function boot(){
-  const fromHash=(location.hash||'').slice(1);
-  S.tab=fromHash||ls.get('tab')||'all';
+  const r=parseHash();
+  S.tab=r.tab||ls.get('tab')||'all'; S.fieldJob=r.tab==='field'?r.job:null;
+  S.fieldView=ls.get('fview')==='week'?'week':'board'; S.fieldPm=ls.get('fpm')||'all';
   S.name=ls.get('name')||'';
   applyTheme(ls.get('theme')||'auto');
   tickClock(); setInterval(tickClock,15000);
@@ -1401,7 +2098,7 @@ function boot(){
   $('sheetbd').addEventListener('click',ev=>{ if(ev.target===$('sheetbd')) closeSheet(); });
   document.addEventListener('keydown',ev=>{ if(ev.key==='Escape'&&!$('sheetbd').hidden) closeSheet(); });
   document.addEventListener('visibilitychange',()=>{ if(document.visibilityState==='visible'&&S.tv) wakeLock(); });
-  window.addEventListener('hashchange',()=>{ const t=(location.hash||'').slice(1); if(tabs().includes(t)&&t!==S.tab) setTab(t,true); });
+  window.addEventListener('hashchange',route);
   window.addEventListener('online',()=>setOffline(false));
   if(ls.get('tv')==='1') setTV(true,false);
   render();

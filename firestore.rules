@@ -68,5 +68,23 @@ service cloud.firestore {
         allow write: if isOffice();
       }
     }
+
+    // ---- Field tab: projects out in the field. Office and administrators only for now;
+    //      shop crews and view-only logins (the TV, shop screens) cannot read any of it. ----
+    match /fieldJobs/{id} {
+      allow read, write: if isOffice();
+    }
+    match /fieldPortions/{id} {
+      allow read, write: if isOffice();
+    }
+    match /fieldCrews/{id} {
+      allow read, write: if isOffice();
+    }
+    match /fieldFiles/{id} {
+      allow read, write: if isOffice();
+      match /chunks/{n} {
+        allow read, write: if isOffice();
+      }
+    }
   }
 }

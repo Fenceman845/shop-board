@@ -1,6 +1,6 @@
 # Yaboo Shop Board
 
-One web page for the PVC Shop, Welding Shop, Wood Shop, Yard and Mechanic Shop. Everyone signs in with their own email and password; what they see and what they can change depends on their role and the shops on their entry in the **People** list.
+One web page for the PVC Shop, Welding Shop, Wood Shop, Yard and Mechanic Shop, plus a separate **Field** tab for projects out in the field. Everyone signs in with their own email and password; what they see and what they can change depends on their role and the shops on their entry in the **People** list.
 
 - `index.html` — the whole board. The page is hosted on GitHub Pages.
 - `firestore.rules` — the security rules to paste into Firebase. They enforce the roles server-side.
@@ -10,10 +10,12 @@ One web page for the PVC Shop, Welding Shop, Wood Shop, Yard and Mechanic Shop. 
 
 | Role | Sees | Can change |
 |---|---|---|
-| **Administrator** | every shop | everything, plus the People list |
-| **Office** | every shop | everything: jobs, crews, equipment, yard, attachments, board settings |
+| **Administrator** | every shop, and the Field tab | everything, plus the People list |
+| **Office** | every shop, and the Field tab | everything: jobs, crews, equipment, yard, attachments, board settings, field projects |
 | **Crew** | only the shops on their entry | posts progress on jobs (+ Progress); nothing else |
 | **View only** | only the shops on their entry (or all) | nothing — use this for the TV and for shop screens |
+
+The Field tab is office and administrator only. Crew and view-only logins don't get the tab and the rules refuse them the data.
 
 The account in `ADMIN_EMAIL` at the top of `index.html` is always an administrator, even if the People list is empty, so the board can't lock itself out.
 
@@ -60,10 +62,26 @@ Suggested starting list: yourself (Administrator, made automatically the first t
 - **Office and Administrator** tap **Edit** to switch editing on and off: add/move/finish jobs, crews, equipment, yard items, attachments, board settings. Every change carries the name from the People list.
 - **Progress bars.** When you create a job, give it a **Quantity to make** and pick **pieces** or **linear feet**. The job then shows a bar and a running total on every screen, including the TV. Crews tap **+ Progress** and enter what they did (added to the total) or, to correct a mistake, the new total. Each entry is logged with the name, time, and an optional note. Office can also fix the total in Edit job. The bar turns green at 100%; marking the job Done is still an office action.
 - **Jobs** move Coming up → Working now → Finished (or On hold). Finished jobs sit under "Finished · last 7 days" per shop; **Clear finished** deletes them.
-- **Example data:** Board settings → Example data → Load / Remove. Everything it adds is marked EXAMPLE.
+- **Example data:** Board settings → Example data → Load / Remove. Everything it adds is marked EXAMPLE. The Field tab has its own **Load example projects** button while it is empty; Remove clears both.
 - **Attachments:** in Edit mode every job has an **Attach** button. Pick a PDF (a scanned worksheet) or a photo; on a phone the same button offers the camera. Attached files show as chips on the job for everyone who can see that shop; tap one to view it in place or open it in a new tab. Attachments are deleted with their job (Delete, or Clear finished).
   - Files are stored in the Firestore database itself, split into pieces, so there's no separate file service and no billing account. Limit is 12 MB per file. Scan at **150 dpi, black-and-white or grayscale, letter size** — that's roughly 50–200 KB per page and loads instantly on a phone. Photos are shrunk to about 2200 px on the long side before upload.
   - The free plan holds 1 GB total. At typical scan sizes that's several thousand pages; clearing finished jobs frees the space their attachments used.
+
+## Field tab
+
+A separate tab at the end of the tab rail for projects out in the field. Office and administrator logins only.
+
+- **Job board.** One card per project, grouped by where it is in its life: Awarded → Submittals → Fabrication → Ready to install → Installing → Punch list → Closed out. On a wide screen the stages sit side by side; on a phone they stack with on-site work first. The chips above the board filter to one stage (Closed out lives there), and a project-manager filter appears once more than one PM has projects.
+- **Project page.** Tap a card. The page has the stage (tap a stage in Edit to move it), customer / GC, location (opens in maps), job #, PM, foreman / crew, dates, a "next step / waiting on" line, and then:
+  - **Portions of the project** — each piece of the job with its own quantity (LF or each), status and progress bar. **+ Progress** logs what was installed, the same way the shops post progress.
+  - **Crew on site** — the days crews are scheduled on the job, and the crew-days already spent.
+  - **Drawings & paperwork** — PDF or photo attachments, same limits as shop attachments.
+- **Crew schedule.** The other view on the Field tab: field crews down the side, the week across the top. In Edit, **+ Assign** on a cell picks the job(s) for that crew and day, with an optional note (shop day, off, rain) and "through Friday" to fill the week. On a phone it shows one day at a time.
+- **Field crews** are their own list (+ Field crew), separate from the shop crews.
+- Each project page has its own link (`#field/<id>`), so it can be texted or bookmarked.
+- TV mode rotates through the shop screens only. A screen that is on the Field tab when TV mode starts stays on it.
+
+The field data lives in its own collections (`fieldJobs`, `fieldPortions`, `fieldCrews`, `fieldFiles`). **Whenever `firestore.rules` changes in this repo, it has to be pasted into Firebase → Firestore Database → Rules and published again** — the page and the rules are deployed separately. Until the rules that cover those collections are published, the Field tab shows a note saying so and the shop tabs carry on as before.
 
 ## Passwords
 
