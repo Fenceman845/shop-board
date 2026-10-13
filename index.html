@@ -412,7 +412,7 @@ const ADMIN_EMAIL = "joejr@yaboofence.com";
 
 import { initializeApp, deleteApp } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js";
 import { getFirestore, initializeFirestore, persistentLocalCache, persistentMultipleTabManager,
-         collection, doc, onSnapshot, addDoc, setDoc, updateDoc, deleteDoc, getDoc, increment, arrayUnion, arrayRemove, query, where }
+         collection, doc, onSnapshot, addDoc, setDoc, updateDoc, deleteDoc, getDoc, increment, arrayUnion, arrayRemove, writeBatch, query, where }
   from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
 import { getAuth, signInWithEmailAndPassword, signOut, onAuthStateChanged, createUserWithEmailAndPassword, updatePassword, sendPasswordResetEmail }
   from "https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js";
@@ -449,7 +449,7 @@ const S={
   editing:false, tab:'all', tv:false, busy:new Set(), rotateTimer:null, lock:null, offline:false,
   blobCache:new Map(), sheetCleanup:null,
   /* field tab */
-  fieldJobs:[], fieldCrews:[], fieldPortions:[], fieldFiles:[], fieldLoaded:false, fieldDenied:false,
+  fieldJobs:[], fieldCrews:[], fieldPortions:[], fieldFiles:[], fieldGot:{}, fieldLoaded:false, fieldDenied:false,
   fieldJob:null, fieldView:'board', fieldStage:'all', fieldPm:'all', weekOff:0, weekDay:null
 };
 const UNITS={pcs:{short:'pcs',long:'pieces',step:'1'},lf:{short:'LF',long:'linear feet',step:'0.5'}};
@@ -891,7 +891,9 @@ function writeErr(e){
 }
 async function addDocTo(col,data){ if(!S.db) return false; try{ await addDoc(collection(S.db,col),data); return true; }catch(e){ writeErr(e); return false; } }
 async function setDocAt(col,id,data){ if(!S.db) return false; try{ await setDoc(doc(S.db,col,id),data); return true; }catch(e){ writeErr(e); return false; } }
-async function mergeDocAt(col,id,data){ if(!S.db) return false; try{ await setDoc(doc(S.db,col,id),data,{merge:true}); return true; }catch(e){ writeErr(e); return false; } }
+async function mergeDocAt(col,id,data){ if(!S.db) return false;
+  if((col==='fieldJobs'&&!fjob(id))||(col==='fieldCrews'&&!fcrew(id))){ toast('That was deleted while you had it open.'); return false; }
+  try{ await setDoc(doc(S.db,col,id),data,{merge:true}); return true; }catch(e){ writeErr(e); return false; } }
 async function updDocAt(col,id,data){ if(!S.db) return false; try{ await updateDoc(doc(S.db,col,id),data); return true; }catch(e){ writeErr(e); return false; } }
 async function delDocAt(col,id){ if(!S.db) return false; try{ await deleteDoc(doc(S.db,col,id)); return true; }catch(e){ writeErr(e); return false; } }
 async function setStage(j,stage){
@@ -1423,6 +1425,7 @@ function isoDay(iso){ const d=new Date(iso); return isNaN(d)?'':(d.getMonth()+1)
 function repeatDates(date,rep){
   const out=[date]; if(rep!=='fri'&&rep!=='sat') return out;
   const last=rep==='sat'?6:5, d=parseDay(date);
+  if(d.getDay()===0) return out;
   for(let i=0;i<7;i++){ d.setDate(d.getDate()+1); const w=d.getDay(); if(w===0||w>last) break; out.push(dstr(d)); }
   return out;
 }
@@ -1454,7 +1457,8 @@ function setFieldView(v){ S.fieldView=v; ls.set('fview',v); render(); }
 function openFieldPage(id){
   S.fieldScroll=window.scrollY||0;
   S.tab='field'; S.fieldJob=id; ls.set('tab','field');
-  try{ history.pushState({fj:1},'','#field/'+encodeURIComponent(id)); }catch(e){}
+  /* make sure the entry we will come Back to says #field, then add the project's own entry */
+  try{ history.replaceState(null,'','#field'); history.pushState({fj:1},'','#field/'+encodeURIComponent(id)); }catch(e){}
   render(); window.scrollTo({top:0});
 }
 function closeFieldPage(){
@@ -1501,7 +1505,7 @@ function renderField(){
     return wrap;
   }
   const pms=[...new Set(S.fieldJobs.map(j=>(j.pm||'').trim()).filter(Boolean))].sort((a,b)=>a.localeCompare(b));
-  const pm=pms.includes(S.fieldPm)?S.fieldPm:'all';
+  const pm=(pms.length>1&&pms.includes(S.fieldPm))?S.fieldPm:'all';
   if(pms.length>1){
     const sel=h('select',{'aria-label':'Project manager'});
     fillOptions(sel,[{value:'all',label:'All project managers'},...pms.map(p=>({value:p,label:p}))],pm);
@@ -1740,7 +1744,8 @@ function openFieldJobForm(j){
       const now=new Date().toISOString();
       const stage=FSTAGE_BY[v.stage]?v.stage:'awarded';
       const data=stamp({name:v.name,customer:v.customer,jobNo:v.jobNo,location:v.location,pm:v.pm,crewId:v.crewId,stage:stage,start:v.start,finish:v.finish,next:v.next,note:v.note,createdAt:j.createdAt||now,closedAt:stage==='closed'?(j.closedAt||now):''});
-      if(j.example) data.example=true;
+      /* an example renamed into a real project stops being an example, so Remove example data leaves it alone */
+      if(j.example) data.example=/^EXAMPLE/i.test(v.name);
       /* merge, so the crew days already on the project are kept */
       if(!isNew) return mergeDocAt('fieldJobs',j.id,data);
       data.days={};
@@ -1773,10 +1778,14 @@ function openPortion(p,j){
       if(!v.name){ toast('Name this portion of the project.'); return false; }
       const now=new Date().toISOString();
       const target=Number(v.target)>0?Number(v.target):0;
-      const done=isNew?0:Math.max(0,Number(v.done)||0);
-      const data=stamp({jobId:j.id,name:v.name,target:target,unit:FUNITS[v.unit]?v.unit:'lf',done:target?done:0,log:Array.isArray(p.log)?p.log:[],status:PSTATUS[v.status]?v.status:'none',note:v.note,createdAt:p.createdAt||now});
-      if(!isNew&&target&&done!==num(p.done)) data.log=[...data.log,{n:done,set:true,by:S.name||'',at:now,note:'corrected in Edit portion'}];
-      if(p.example||j.example) data.example=true;
+      /* work from the portion as it is now, so progress posted while this sheet was open is kept;
+         the total only changes if the Installed so far box was actually edited */
+      const cur=isNew?p:(S.fieldPortions.find(x=>x.id===p.id)||p);
+      const fixed=!isNew&&v.done!==(hasTarget(p)?fmtN(p.done):'');
+      const done=isNew?0:(fixed?Math.max(0,Number(v.done)||0):num(cur.done));
+      const data=stamp({jobId:j.id,name:v.name,target:target,unit:FUNITS[v.unit]?v.unit:'lf',done:target?done:0,log:Array.isArray(cur.log)?cur.log:[],status:PSTATUS[v.status]?v.status:'none',note:v.note,createdAt:p.createdAt||now});
+      if(fixed&&target) data.log=[...data.log,{n:done,set:true,by:S.name||'',at:now,note:'corrected in Edit portion'}];
+      if(j.example) data.example=true;
       return isNew?addDocTo('fieldPortions',data):setDocAt('fieldPortions',p.id,data);
     },
     onDelete:isNew?null:()=>delDocAt('fieldPortions',p.id)
@@ -1802,7 +1811,7 @@ function openFieldCrew(c){
     onSave:async v=>{
       if(!v.name&&!v.lead){ toast('Give the crew a name or a foreman.'); return false; }
       const data=stamp({name:v.name||v.lead,lead:v.lead,members:v.members.split(',').map(x=>x.trim()).filter(Boolean),note:v.note,createdAt:c.createdAt||new Date().toISOString()});
-      if(c.example) data.example=true;
+      if(c.example) data.example=/^EXAMPLE/i.test(data.name);
       /* merge, so the crew's day notes are kept */
       return isNew?addDocTo('fieldCrews',data):mergeDocAt('fieldCrews',c.id,data);
     },
@@ -1825,7 +1834,11 @@ function openCrewDay(c,date){
       {key:'rep',label:'Apply to',type:'select',options:REPEAT_OPTS}
     ],
     onSave:async v=>{
+      if(!S.db) return false;
+      if(!fcrew(c.id)){ toast('That crew was deleted while you had it open.'); return false; }
       const pick=list.read(), dates=repeatDates(date,v.rep);
+      /* every job and the note go in one batch, so a dropped connection can't leave half a schedule */
+      const batch=writeBatch(S.db); let n=0;
       for(const j of S.fieldJobs){
         const days={}; let touched=false;
         for(const d of dates){
@@ -1833,12 +1846,13 @@ function openCrewDay(c,date){
           if(on&&!was){ days[d]=arrayUnion(c.id); touched=true; }
           else if(!on&&was){ days[d]=arrayRemove(c.id); touched=true; }
         }
-        if(touched&&!(await mergeDocAt('fieldJobs',j.id,stamp({days})))) return false;
+        if(touched){ batch.set(doc(S.db,'fieldJobs',j.id),stamp({days}),{merge:true}); n++; }
       }
       const notes={}; let changed=false;
       for(const d of dates){ if(dayNote(c,d)!==v.note){ notes[d]=v.note; changed=true; } }
-      if(changed&&!(await mergeDocAt('fieldCrews',c.id,stamp({dayNotes:notes})))) return false;
-      return true;
+      if(changed){ batch.set(doc(S.db,'fieldCrews',c.id),stamp({dayNotes:notes}),{merge:true}); n++; }
+      if(!n) return true;
+      try{ await batch.commit(); return true; }catch(e){ writeErr(e); return false; }
     }
   });
 }
@@ -2005,7 +2019,7 @@ function startData(){
 /* Field data is office-only. If the rules in Firebase are older than this page, these come back
    permission-denied; the Field tab then shows the one setup step instead of nagging every screen with a toast. */
 function listenField(col,onData){
-  const un=onSnapshot(collection(S.db,col),{includeMetadataChanges:true},snap=>{ onData(docsOf(snap)); S.fieldLoaded=true; scheduleRender(); },
+  const un=onSnapshot(collection(S.db,col),{includeMetadataChanges:true},snap=>{ onData(docsOf(snap)); S.fieldGot[col]=true; S.fieldLoaded=['fieldJobs','fieldCrews','fieldPortions'].every(c=>S.fieldGot[c]); scheduleRender(); },
     err=>{ console.warn('field subscribe failed',col,err); if(err&&err.code==='permission-denied'){ S.fieldDenied=true; scheduleRender(); } });
   S.unsubs.push(un);
 }
@@ -2019,7 +2033,7 @@ function stopData(){
   for(const un of S.unsubs){ try{ un(); }catch(e){} }
   S.unsubs=[]; S.parts={};
   S.crews=[]; S.jobs=[]; S.equipment=[]; S.yard=[]; S.files=[]; S.users=[]; S.board={rotateSec:20,notice:''};
-  S.fieldJobs=[]; S.fieldCrews=[]; S.fieldPortions=[]; S.fieldFiles=[]; S.fieldLoaded=false; S.fieldDenied=false;
+  S.fieldJobs=[]; S.fieldCrews=[]; S.fieldPortions=[]; S.fieldFiles=[]; S.fieldGot={}; S.fieldLoaded=false; S.fieldDenied=false;
   S.loaded=false;
 }
 function setOffline(on){ if(S.offline===on) return; S.offline=on; $('offline').hidden=!on; }
@@ -2074,6 +2088,7 @@ function parseHash(){
 }
 function route(){
   const r=parseHash();
+  if(!r.tab){ if(S.tab==='field'&&S.fieldJob){ S.fieldJob=null; render(); } return; }
   if(!tabs().includes(r.tab)) return;
   if(r.tab===S.tab&&r.job===S.fieldJob) return;
   const backToBoard=S.tab==='field'&&S.fieldJob&&r.tab==='field'&&!r.job;
