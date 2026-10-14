@@ -382,6 +382,11 @@ a.crow-ph:hover,.crow a.ph:hover{border-color:var(--muted)}
 .dgroups{display:grid; gap:.6rem; grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr))}
 .dgroup{display:flex; flex-direction:column; gap:.4rem; padding:.65rem .8rem .75rem; background:var(--panel); border:1px solid var(--line); border-radius:6px; min-width:0}
 .dgroup h4{display:flex; align-items:center; gap:.5rem; min-height:1.6rem} .dgroup h4 .btn{margin-left:auto; letter-spacing:0; text-transform:none}
+/* drawing names carry the spec section and submittal number, so show the whole name instead of cutting it off */
+.dgroup .atts{flex-direction:column; align-items:stretch}
+.dgroup .att{white-space:normal; border-radius:6px; padding:.35em .7em; align-items:flex-start; text-align:left}
+.dgroup .att span.nm{white-space:normal; overflow:visible; text-overflow:clip; overflow-wrap:anywhere}
+.dgroup .att .clip{margin-top:.15em}
 .crew.otc h3{color:var(--muted)}
 @media (max-width:520px){ .lrow{grid-template-columns:1fr} .lrow .w{font-size:.8em} }
 /* printable cover sheet: hidden on screen, the only thing on the page while printing */
