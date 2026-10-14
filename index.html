@@ -387,6 +387,9 @@ a.crow-ph:hover,.crow a.ph:hover{border-color:var(--muted)}
 .dgroup .att{white-space:normal; border-radius:6px; padding:.35em .7em; align-items:flex-start; text-align:left}
 .dgroup .att span.nm{white-space:normal; overflow:visible; text-overflow:clip; overflow-wrap:anywhere}
 .dgroup .att .clip{margin-top:.15em}
+.dentry{display:flex; flex-direction:column; gap:.15rem} .dentry .quiet{padding-left:.3rem; font-size:.85em} .quiet.warn{color:var(--warn)}
+.pdw{grid-column:1/-1; display:flex; flex-wrap:wrap; gap:.35rem; padding-top:.25rem}
+.pdw .att{white-space:normal; align-items:flex-start; text-align:left; border-radius:6px} .pdw .att span.nm{white-space:normal; overflow:visible; text-overflow:clip; overflow-wrap:anywhere}
 .crew.otc h3{color:var(--muted)}
 @media (max-width:520px){ .lrow{grid-template-columns:1fr} .lrow .w{font-size:.8em} }
 /* printable cover sheet: hidden on screen, the only thing on the page while printing */
@@ -1728,6 +1731,8 @@ async function deleteFieldJob(j,quiet){
 }
 function openPortion(p,j){
   const isNew=!p.id;
+  const dws=shopDrawings(j.id);
+  const dwList=dws.length?checklist(dws.map(f=>({value:f.id,label:f.name||'file'})),isNew?[]:dws.filter(f=>(f.portions||[]).includes(p.id)).map(f=>f.id)):null;
   openSheet({
     title:isNew?'New portion':'Edit portion',
     intro:j.name||'',
@@ -1741,6 +1746,7 @@ function openPortion(p,j){
       {key:'status',label:'Status',type:'select',half:true,options:Object.entries(PSTATUS).map(([v,l])=>({value:v,label:l}))},
       {key:'note',label:'Notes',type:'textarea',placeholder:'Spec, finish, what it is waiting on…'}
     ].filter(Boolean),
+    extra:dwList?h('div',{class:'f'},h('label',{text:'Approved shop drawings that cover this portion'}),dwList):null,
     onSave:async v=>{
       if(!v.name){ toast('Name this portion of the project.'); return false; }
       const now=new Date().toISOString();
@@ -1753,7 +1759,20 @@ function openPortion(p,j){
       const data=stamp({jobId:j.id,name:v.name,item:v.item,target:target,unit:FUNITS[v.unit]?v.unit:'lf',done:target?done:0,log:Array.isArray(cur.log)?cur.log:[],status:PSTATUS[v.status]?v.status:'none',note:v.note,createdAt:p.createdAt||now});
       if(fixed&&target) data.log=[...data.log,{n:done,set:true,by:S.name||'',at:now,note:'corrected in Edit portion'}];
       if(j.example) data.example=true;
-      return isNew?addDocTo('fieldPortions',data):setDocAt('fieldPortions',p.id,data);
+      if(!S.db) return false;
+      let pid=p.id;
+      try{
+        if(isNew){ const ref=await addDoc(collection(S.db,'fieldPortions'),data); pid=ref.id; }
+        else await setDoc(doc(S.db,'fieldPortions',pid),data);
+      }catch(e){ writeErr(e); return false; }
+      /* which drawings cover it: one batch over the files whose tick changed */
+      if(dwList){
+        const picked=dwList.read(); const batch=writeBatch(S.db); let n=0;
+        for(const f of dws){ const has=(f.portions||[]).includes(pid), want=picked.includes(f.id); if(has===want) continue;
+          batch.set(doc(S.db,'fieldFiles',f.id),{portions:want?arrayUnion(pid):arrayRemove(pid)},{merge:true}); n++; }
+        if(n){ try{ await batch.commit(); }catch(e){ writeErr(e); return false; } }
+      }
+      return true;
     },
     onDelete:isNew?null:()=>delDocAt('fieldPortions',p.id)
   });
@@ -1863,6 +1882,11 @@ function contactsOf(j){ return Array.isArray(j.contacts)?j.contacts.filter(c=>c&
 function logOf(j){ const l=Array.isArray(j.log)?j.log.filter(e=>e&&typeof e==='object'):[]; return l.sort((a,b)=>(b.at||'')<(a.at||'')?-1:1); }
 function telHref(p){ const d=String(p||'').replace(/[^\d+]/g,''); return d?'tel:'+d:null; }
 function mapsUrl(loc){ return 'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(loc); }
+function shopDrawings(jobId){ return ffilesFor(jobId).filter(f=>f.kind==='shop'); }
+function drawingsFor(jobId,portionId){ return shopDrawings(jobId).filter(f=>Array.isArray(f.portions)&&f.portions.includes(portionId)); }
+function coversOf(f,jobId){ const ids=Array.isArray(f.portions)?f.portions:[]; return portionsFor(jobId).filter(p=>ids.includes(p.id)); }
+/* a portion is expected to have an approved drawing once the job is past Awarded */
+function wantsDrawings(j){ return fstage(j).i>=FSTAGE_BY.submittals.i; }
 function shopJobsFor(jobId){ const rank={active:0,hold:1,queued:2,done:3}; return S.jobs.filter(x=>x.fieldJobId===jobId).sort((a,b)=>(rank[a.stage]??4)-(rank[b.stage]??4)||jobSort(a,b)); }
 function digChip(j,editable){
   const d=digOf(j);
@@ -1943,7 +1967,9 @@ function renderFieldJob(id){
 
   /* portions */
   const pors=portionsFor(j.id);
+  const missing=wantsDrawings(j)?pors.filter(p=>!drawingsFor(j.id,p.id).length).length:0;
   const psec=h('div',{class:'fsec'},h('div',{class:'fsech'},h('h3',{text:'Portions of the project'}),
+    missing?h('span',{class:'fchip warn',text:missing+(missing===1?' portion':' portions')+' without an approved drawing'}):null,
     h('button',{class:'btn sm pri ed',type:'button',text:'+ Portion',onclick:()=>openPortion({},j)})));
   if(pors.length){ const list=h('div',{class:'plist'}); pors.forEach(p=>list.append(portionRow(p,j))); psec.append(list); }
   else psec.append(h('div',{class:'quiet',text:'Nothing broken out yet. Add each portion of the job and track it on its own.'}));
@@ -1986,7 +2012,18 @@ function renderFieldJob(id){
   FKINDS.forEach(k=>{
     const mine=files.filter(f=>(FKINDS.some(x=>x.id===f.kind)?f.kind:'other')===k.id);
     const g=h('div',{class:'dgroup'},h('h4',{},k.label,h('button',{class:'btn sm ed',type:'button',text:'Attach',onclick:()=>pickFile({id:j.id,shop:'field'},'fieldFiles',{kind:k.id})})));
-    if(mine.length){ const atts=h('div',{class:'atts'}); mine.forEach(f=>atts.append(h('button',{class:'att',type:'button',title:f.name||'',onclick:()=>openViewer(f)},clip(),h('span',{class:'nm',text:f.name||'file'})))); g.append(atts); }
+    if(mine.length){
+      const atts=h('div',{class:'atts'});
+      mine.forEach(f=>{
+        const chip=h('button',{class:'att',type:'button',title:f.name||'',onclick:()=>openViewer(f)},clip(),h('span',{class:'nm',text:f.name||'file'}));
+        if(k.id!=='shop'){ atts.append(chip); return; }
+        const cov=coversOf(f,j.id);
+        atts.append(h('div',{class:'dentry'},chip,cov.length
+          ?h('span',{class:'quiet',text:'Covers: '+cov.map(p=>p.name||'(portion)').join(', ')})
+          :h('span',{class:'quiet warn',text:pors.length?'Not tied to a portion yet — Edit the portion it covers':'No portions yet'})));
+      });
+      g.append(atts);
+    }
     else g.append(h('div',{class:'quiet',text:'None'}));
     groups.append(g);
   });
@@ -2038,8 +2075,14 @@ function portionRow(p,j){
   row.append(h('span',{class:'due'+(p.status==='done'?' ok':''),text:PSTATUS[p.status]||PSTATUS.none}));
   if(p.note) row.append(h('div',{class:'n',text:p.note}));
   const bar=progressBar(p,'installed'); if(bar) row.append(bar);
+  const dws=drawingsFor(j.id,p.id);
+  const dl=h('div',{class:'pdw'});
+  if(dws.length) dws.forEach(f=>dl.append(h('button',{class:'att',type:'button',title:f.name||'',onclick:()=>openViewer(f)},clip(),h('span',{class:'nm',text:f.name||'file'}))));
+  else if(wantsDrawings(j)) dl.append(h('span',{class:'fchip warn',text:'No approved drawing'}));
+  if(dl.childElementCount) row.append(dl);
   const acts=h('div',{class:'jacts'});
   if(hasTarget(p)&&p.status!=='done') acts.append(h('button',{class:'btn sm cr',type:'button',text:'+ Progress',onclick:()=>postPortion(p,j)}));
+  acts.append(h('button',{class:'btn sm ed',type:'button',text:'+ Drawing',title:'Attach an approved shop drawing to this portion',onclick:()=>pickFile({id:j.id,shop:'field'},'fieldFiles',{kind:'shop',portions:[p.id]})}));
   acts.append(h('button',{class:'btn sm ed',type:'button',text:'Edit',onclick:()=>openPortion(p,j)}));
   row.append(acts);
   return row;
@@ -2181,8 +2224,8 @@ function buildCoverSheet(j){
   const pors=portionsFor(j.id);
   if(pors.length){
     sheet.append(h('h2',{text:'Portions of the project'}));
-    const t=h('table',{},h('thead',{},h('tr',{},h('th',{text:'Item'}),h('th',{text:'Portion'}),h('th',{text:'Quantity'}),h('th',{text:'Status'}))));
-    const tb=h('tbody'); pors.forEach(p=>tb.append(h('tr',{},h('td',{text:p.item||''}),h('td',{text:p.name||''}),h('td',{text:hasTarget(p)?fmtN(p.target)+' '+unitOf(p).short:''}),h('td',{text:PSTATUS[p.status]||PSTATUS.none})))); t.append(tb); sheet.append(t);
+    const t=h('table',{},h('thead',{},h('tr',{},h('th',{text:'Item'}),h('th',{text:'Portion'}),h('th',{text:'Quantity'}),h('th',{text:'Status'}),h('th',{text:'Approved drawing'}))));
+    const tb=h('tbody'); pors.forEach(p=>tb.append(h('tr',{},h('td',{text:p.item||''}),h('td',{text:p.name||''}),h('td',{text:hasTarget(p)?fmtN(p.target)+' '+unitOf(p).short:''}),h('td',{text:PSTATUS[p.status]||PSTATUS.none}),h('td',{text:drawingsFor(j.id,p.id).map(f=>f.name||'file').join(', ')||'—'})))); t.append(tb); sheet.append(t);
   }
   if(j.siteNotes){ sheet.append(h('h2',{text:'Site notes'})); sheet.append(h('p',{class:'note',text:j.siteNotes})); }
   const files=ffilesFor(j.id);

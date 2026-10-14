@@ -79,6 +79,7 @@ A separate tab at the end of the tab rail for projects out in the field. Office 
   - **In the shop** — the shop jobs tied to this project, with their progress bars. On a shop tab, Edit a job and set **For** to the project.
   - **Paperwork** — submittals, shop drawings, JHA, insurance, permits, each with a status and date; the dig ticket with its number, date called, clear / not clear, and expiry. **Edit paperwork** (or tap the dig chip).
   - **Drawings & paperwork** — attachments in three groups: approved shop drawings, contract / layout drawings, other. Same limits as shop attachments.
+  - **Approved shop drawings belong to portions.** Attach one from a portion (**+ Drawing**) or tick, in Edit portion, which of the project's drawings cover it — one file can cover several portions. Once a job is past Awarded, every portion without an approved drawing is flagged, and the header counts them, so no area gets missed. A drawing attached at the project level shows "Not tied to a portion yet" until it is.
   - **Crew on site** — the days crews are scheduled on the job, and the crew-days already spent.
   - **Site notes** — hours, access, parking, safety requirements. Edit project → Site notes.
   - **Log** — dated entries with the name on them (**+ Log entry**). Replaces a single notes box.
