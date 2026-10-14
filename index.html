@@ -141,7 +141,7 @@ body.editing .chip.ed-click{cursor:pointer}
 .person{display:grid; grid-template-columns:minmax(0,1fr) auto; gap:.1rem .6rem; padding:.45rem .6rem; background:var(--panel-2); border-radius:4px; align-items:center; cursor:pointer; border:1px solid transparent}
 .person:hover{border-color:var(--line-2)}
 .person .nm{font-weight:600} .person .em{color:var(--muted); font-size:.88em; grid-column:1; overflow-wrap:anywhere}
-.person .rl{font-size:.78em; font-weight:600; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); white-space:nowrap; grid-row:1/3; align-self:center}
+.person .rl{font-size:.78em; font-weight:600; text-transform:uppercase; letter-spacing:.06em; color:var(--muted); white-space:nowrap; grid-column:2; grid-row:1/3; align-self:center}
 .checks{display:flex; flex-wrap:wrap; gap:.4rem .9rem; grid-column:1/-1}
 .f .checks label{display:inline-flex; align-items:center; gap:.4em; font-size:.95rem; text-transform:none; letter-spacing:0; color:var(--fg)}
 .f .checks input{width:auto; accent-color:var(--accent)}
@@ -353,6 +353,58 @@ button.step{cursor:pointer} button.step:hover{border-color:var(--muted)}
 .wkj:hover{background:var(--line)}
 .wknote{font-size:.84em; color:var(--muted); overflow-wrap:anywhere}
 .wkc .btn{align-self:flex-start}
+/* project page: chips, contacts, paperwork, shop jobs, drawings by kind, log */
+.fchips,.cflags{display:flex; gap:.4rem; flex-wrap:wrap; align-items:center}
+.cflags{padding-top:.1rem}
+.fchip{display:inline-flex; align-items:center; gap:.45em; font:inherit; font-size:.85em; font-weight:600; padding:.25em .7em; border-radius:99px; background:var(--panel-2); border:1px solid var(--line-2); color:var(--fg); white-space:nowrap; line-height:1.3}
+.fchip .k{font-size:.78em; text-transform:uppercase; letter-spacing:.08em; color:var(--muted); font-weight:600}
+.fchip.ok{background:var(--ok-soft); border-color:transparent; color:var(--ok)}
+.fchip.warn{background:var(--warn-soft); border-color:transparent; color:var(--warn)}
+.fchip.bad{background:var(--bad-soft); border-color:transparent; color:var(--bad)}
+.fchip.ok .k,.fchip.warn .k,.fchip.bad .k{color:inherit; opacity:.8}
+button.fchip{cursor:pointer} button.fchip:hover{border-color:var(--muted)} button.fchip:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
+.clist{display:grid; gap:.45rem; grid-template-columns:repeat(auto-fill,minmax(min(100%,300px),1fr))}
+.crow{display:grid; grid-template-columns:minmax(0,1fr) auto; gap:.1rem .7rem; align-items:center; padding:.55rem .75rem; background:var(--panel); border:1px solid var(--line); border-radius:6px}
+.crow .nm{font-weight:600; overflow-wrap:anywhere}
+.crow .rl{color:var(--muted); font-size:.9em; grid-column:1; overflow-wrap:anywhere}
+.crow .ph{grid-column:2; grid-row:1/3; align-self:center; font-weight:600; font-variant-numeric:tabular-nums; white-space:nowrap; color:var(--accent); text-decoration:none; padding:.35em .7em; border:1px solid var(--line-2); border-radius:6px}
+a.crow-ph:hover,.crow a.ph:hover{border-color:var(--muted)}
+.crow .btn{grid-column:1/-1; justify-self:start; margin-top:.2rem}
+.pgrid{display:grid; gap:.45rem; grid-template-columns:repeat(auto-fill,minmax(min(100%,230px),1fr))}
+.prow{display:grid; grid-template-columns:minmax(0,1fr) auto; gap:.05rem .5rem; align-items:center; padding:.5rem .75rem; background:var(--panel); border:1px solid var(--line); border-radius:6px}
+.prow .lb{font-weight:600} .prow .dt{color:var(--faint); font-size:.85em; grid-column:1; min-height:1em}
+.prow .due{grid-column:2; grid-row:1/3; align-self:center}
+.plist .job[role="button"]{cursor:pointer} .plist .job[role="button"]:hover{border-color:var(--line-2)}
+.loglist{display:flex; flex-direction:column; gap:.4rem}
+.lrow{display:grid; grid-template-columns:auto minmax(0,1fr); gap:.15rem .7rem; padding:.5rem .75rem; background:var(--panel); border:1px solid var(--line); border-radius:6px; align-items:baseline}
+.lrow .w{color:var(--muted); font-size:.85em; white-space:nowrap; font-variant-numeric:tabular-nums}
+.lrow .t{white-space:pre-wrap; overflow-wrap:anywhere}
+.dgroups{display:grid; gap:.6rem; grid-template-columns:repeat(auto-fit,minmax(min(100%,260px),1fr))}
+.dgroup{display:flex; flex-direction:column; gap:.4rem; padding:.65rem .8rem .75rem; background:var(--panel); border:1px solid var(--line); border-radius:6px; min-width:0}
+.dgroup h4{display:flex; align-items:center; gap:.5rem; min-height:1.6rem} .dgroup h4 .btn{margin-left:auto; letter-spacing:0; text-transform:none}
+.crew.otc h3{color:var(--muted)}
+@media (max-width:520px){ .lrow{grid-template-columns:1fr} .lrow .w{font-size:.8em} }
+/* printable cover sheet: hidden on screen, the only thing on the page while printing */
+#printsheet{display:none}
+body.printing #printsheet{display:block; position:absolute; left:0; top:0; width:100%; background:#fff; color:#000; z-index:50; padding:.6in; box-sizing:border-box; font-family:var(--body); font-size:11pt; line-height:1.3}
+body.printing > .app, body.printing .sheet-bd, body.printing .toast{display:none !important}
+#printsheet .ph{display:flex; justify-content:space-between; align-items:baseline; gap:1rem; border-bottom:2px solid #000; padding-bottom:4pt; margin-bottom:8pt; font-size:9.5pt}
+#printsheet .co{font-family:var(--display); font-weight:700; font-size:14pt; letter-spacing:.05em; text-transform:uppercase}
+#printsheet h1{font-family:var(--display); font-weight:700; font-size:22pt; margin:0; text-transform:uppercase; line-height:1; letter-spacing:.02em}
+#printsheet .sub{font-size:11.5pt; margin:3pt 0 8pt}
+#printsheet .facts{display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:6pt 12pt; border:1px solid #000; padding:6pt 8pt; margin:0 0 4pt}
+#printsheet .facts dt{font-size:7.5pt; text-transform:uppercase; letter-spacing:.1em; color:#444}
+#printsheet .facts dd{margin:1pt 0 0; font-weight:600; overflow-wrap:anywhere}
+#printsheet h2{font-family:var(--display); font-weight:700; font-size:12pt; text-transform:uppercase; letter-spacing:.06em; margin:9pt 0 3pt; border-bottom:1px solid #000; padding-bottom:1pt}
+#printsheet table{width:100%; border-collapse:collapse; font-size:10.5pt}
+#printsheet th,#printsheet td{text-align:left; padding:2.5pt 4pt; border-bottom:1px solid #bbb; vertical-align:top}
+#printsheet th{font-size:8pt; text-transform:uppercase; letter-spacing:.08em; color:#444; font-weight:600}
+#printsheet .note{white-space:pre-wrap; margin:0; overflow-wrap:anywhere; color:#000; border:0; padding:0; font-size:inherit}
+#printsheet .quiet{color:#555; margin:0}
+#printsheet ul.pk{margin:0; padding-left:1.1em} #printsheet ul.pk li{margin:1pt 0; overflow-wrap:anywhere}
+#printsheet .lines{height:1.6in; background:repeating-linear-gradient(to bottom,transparent 0,transparent 21pt,#999 21pt,#999 22pt); border-bottom:1px solid #999}
+#printsheet .foot{margin-top:10pt; font-size:8pt; color:#444; display:flex; justify-content:space-between; gap:1rem; flex-wrap:wrap; border-top:1px solid #000; padding-top:4pt}
+@media print{ @page{margin:.5in} body.printing #printsheet{position:static; padding:0} #printsheet h2{break-after:avoid} #printsheet table,#printsheet .facts{break-inside:avoid} }
 .checks.col{flex-direction:column; flex-wrap:nowrap; gap:.5rem; max-height:16rem; overflow:auto; padding:.6rem .7rem; border:1px solid var(--line-2); border-radius:6px; background:var(--panel-2)}
 .f .checks.col label{align-items:flex-start; line-height:1.3}
 .f .checks.col input{margin-top:.2em; flex:none}
@@ -390,6 +442,7 @@ button.step{cursor:pointer} button.step:hover{border-color:var(--muted)}
   <footer class="foot" id="foot"></footer>
 </div>
 <div class="sheet-bd" id="sheetbd" hidden><div class="sheet" id="sheet" role="dialog" aria-modal="true"></div></div>
+<div id="printsheet" aria-hidden="true"></div>
 
 <script type="module">
 /* =========================================================================
@@ -608,13 +661,15 @@ function renderOverview(){
     if(eqBad.length) card.append(h('div',{class:'eqrow'},eqBad.map(e=>eqChip(e))));
     if(!crews.length&&!now.length&&!next.length) card.append(h('div',{class:'quiet',text:'Nothing posted yet.'}));
     for(const c of crews){
-      const cj=jobsFor(s.id,c.id,'active');
+      const cj=jobsFor(s.id,c.id,'active').filter(notOtc);
       const blk=h('div',{class:'ovcrew'},h('div',{class:'ovcn'},h('span',{class:'nm',text:c.name||''}),c.lead?h('span',{class:'lead',text:c.lead}):null));
       if(cj.length) cj.forEach(j=>blk.append(ovJob(j))); else blk.append(h('div',{class:'quiet',text:'Nothing on the floor'}));
       card.append(blk);
     }
-    const un=jobsFor(s.id,'','active');
+    const un=jobsFor(s.id,'','active').filter(notOtc);
     if(un.length){ const blk=h('div',{class:'ovcrew'},h('div',{class:'ovcn'},h('span',{class:'nm',text:'Unassigned'}))); un.forEach(j=>blk.append(ovJob(j))); card.append(blk); }
+    const otc=jobsFor(s.id,undefined,'active').filter(isOtc);
+    if(otc.length){ const blk=h('div',{class:'ovcrew'},h('div',{class:'ovcn'},h('span',{class:'nm',text:'Over the counter'}))); otc.forEach(j=>blk.append(ovJob(j,true))); card.append(blk); }
     if(next.length){
       const blk=h('div',{class:'ovnext'},h('h4',{text:'Coming up'}));
       next.slice(0,4).forEach(j=>blk.append(ovJob(j)));
@@ -633,8 +688,8 @@ function renderOverview(){
   }
   return grid;
 }
-function ovJob(j){
-  const it=itemLine(j);
+function ovJob(j,showCrew){
+  const it=[itemLine(j),showCrew?crewName(j.crewId):''].filter(Boolean).join(' · ');
   const n=filesFor(j.id).length;
   return h('div',{class:'ovj '+(j.stage||'')},h('span',{class:'p',text:j.project||'(no project)'}),dueChip(j)||h('span'),it?h('span',{class:'i',text:it}):null,
     progressBar(j), n?h('span',{class:'attc'},clip(),String(n)):null);
@@ -680,12 +735,21 @@ function renderShop(id){
   } else {
     const grid=h('div',{class:'crews'});
     crews.forEach(c=>grid.append(crewCard(c,id)));
-    const unA=jobsFor(id,'','active'), unQ=jobsFor(id,'','queued'), unH=jobsFor(id,'','hold');
+    const unA=jobsFor(id,'','active').filter(notOtc), unQ=jobsFor(id,'','queued').filter(notOtc), unH=jobsFor(id,'','hold').filter(notOtc);
     if(unA.length||unQ.length||unH.length||!crews.length){
       const card=h('article',{class:'crew un'},h('div',{class:'crewh'},h('div',{},h('h3',{text:'Unassigned'}),h('div',{class:'who',text:'Not yet given to a crew'}))));
       card.append(section('Working now',unA,'—'));
       card.append(section('Coming up',unQ,'Nothing queued'));
       if(unH.length) card.append(section('On hold',unH));
+      grid.append(card);
+    }
+    /* counter orders: their own card, with the crew on each row, so they don't mix with project work */
+    const oA=jobsFor(id,undefined,'active').filter(isOtc), oQ=jobsFor(id,undefined,'queued').filter(isOtc), oH=jobsFor(id,undefined,'hold').filter(isOtc);
+    if(oA.length||oQ.length||oH.length){
+      const card=h('article',{class:'crew otc'},h('div',{class:'crewh'},h('div',{},h('h3',{text:'Over the counter'}),h('div',{class:'who',text:'Counter and walk-in orders'}))));
+      card.append(section('Working now',oA,'—',true));
+      card.append(section('Coming up',oQ,'Nothing queued',true));
+      if(oH.length) card.append(section('On hold',oH,'',true));
       grid.append(card);
     }
     wrap.append(grid);
@@ -705,7 +769,7 @@ function renderShop(id){
   return wrap;
 }
 function crewCard(c,shop){
-  const now=jobsFor(shop,c.id,'active'), next=jobsFor(shop,c.id,'queued'), hold=jobsFor(shop,c.id,'hold');
+  const now=jobsFor(shop,c.id,'active').filter(notOtc), next=jobsFor(shop,c.id,'queued').filter(notOtc), hold=jobsFor(shop,c.id,'hold').filter(notOtc);
   const who=[c.lead?c.lead+' (lead)':'',(c.members||[]).join(', ')].filter(Boolean).join(' · ');
   const card=h('article',{class:'crew'});
   card.append(h('div',{class:'crewh'},h('div',{},h('h3',{text:c.name||''}),who?h('div',{class:'who',text:who}):null),
@@ -717,9 +781,9 @@ function crewCard(c,shop){
   card.append(h('div',{class:'acts ed'},h('button',{class:'btn sm',type:'button',text:'+ Job for '+(c.name||'crew'),onclick:()=>openJob({shop:shop,crewId:c.id})})));
   return card;
 }
-function section(title,jobs,emptyText){
+function section(title,jobs,emptyText,showCrew){
   const sec=h('div',{class:'sec'},h('h4',{text:title}));
-  if(jobs.length) jobs.forEach(j=>sec.append(jobRow(j))); else if(emptyText) sec.append(h('div',{class:'quiet',text:emptyText}));
+  if(jobs.length) jobs.forEach(j=>sec.append(jobRow(j,showCrew))); else if(emptyText) sec.append(h('div',{class:'quiet',text:emptyText}));
   return sec;
 }
 function crewName(id){ const c=S.crews.find(x=>x.id===id); return c?c.name:''; }
@@ -729,7 +793,8 @@ function jobRow(j,showCrew){
   row.append(dueChip(j)||h('span'));
   const it=itemLine(j);
   const cn=showCrew?crewName(j.crewId):'';
-  if(it||cn) row.append(h('div',{class:'i',text:[it,cn].filter(Boolean).join(' · ')}));
+  const kd=j.kind==='res'?'Residential':'';
+  if(it||cn||kd) row.append(h('div',{class:'i',text:[it,cn,kd].filter(Boolean).join(' · ')}));
   if(j.note) row.append(h('div',{class:'n',text:j.note}));
   const bar=progressBar(j); if(bar) row.append(bar);
   const files=filesFor(j.id);
@@ -935,14 +1000,14 @@ async function shrinkImage(file){
     return out||file;
   } finally{ URL.revokeObjectURL(url); }
 }
-function pickFile(job,col){
+function pickFile(job,col,extra){
   if(!S.canWrite){ toast('Only office accounts can attach files.'); return; }
   let inp=$('filepick');
   if(!inp){ inp=h('input',{type:'file',id:'filepick',accept:'application/pdf,image/*',style:'position:fixed;left:-9999px;top:0;opacity:0'}); document.body.append(inp); }
-  inp.value=''; inp.onchange=()=>{ const f=inp.files&&inp.files[0]; if(f) uploadFile(job,f,col); };
+  inp.value=''; inp.onchange=()=>{ const f=inp.files&&inp.files[0]; if(f) uploadFile(job,f,col,extra); };
   inp.click();
 }
-async function uploadFile(job,file,col){
+async function uploadFile(job,file,col,extra){
   if(!S.db||!job.id) return;
   col=col||'files';
   let blob=file, type=file.type||'', name=(file.name||'file').slice(0,120);
@@ -958,7 +1023,7 @@ async function uploadFile(job,file,col){
       const b64=await blobToB64(blob.slice(i*CHUNK,(i+1)*CHUNK));
       await setDoc(doc(S.db,col,id,'chunks',String(i)),{d:b64});
     }
-    await setDoc(doc(S.db,col,id),stamp({jobId:job.id,shop:job.shop||(col==='fieldFiles'?'field':''),name,type,size:blob.size,chunks,createdAt:new Date().toISOString()}));
+    await setDoc(doc(S.db,col,id),stamp(Object.assign({jobId:job.id,shop:job.shop||(col==='fieldFiles'?'field':''),name,type,size:blob.size,chunks,createdAt:new Date().toISOString()},extra||{})));
     toast('Attached '+name);
   }catch(e){ writeErr(e); }
 }
@@ -1258,10 +1323,11 @@ function openJob(j){
   const isNew=!j.id;
   openSheet({
     title:isNew?'New job':'Edit job',
-    values:{shop:j.shop||S.tab||'weld',crewId:j.crewId||'',project:j.project||'',item:j.item||'',target:hasTarget(j)?fmtN(j.target):(j.qty||''),unit:j.unit||'pcs',done:hasTarget(j)?fmtN(j.done):'',due:j.due||'',stage:j.stage||'queued',note:j.note||''},
+    values:{shop:j.shop||S.tab||'weld',crewId:j.crewId||'',link:j.kind==='otc'?'otc':j.kind==='res'?'res':(j.fieldJobId?'p:'+j.fieldJobId:''),project:j.project||'',item:j.item||'',target:hasTarget(j)?fmtN(j.target):(j.qty||''),unit:j.unit||'pcs',done:hasTarget(j)?fmtN(j.done):'',due:j.due||'',stage:j.stage||'queued',note:j.note||''},
     fields:[
       {key:'shop',label:'Shop',type:'select',options:shopOpts,half:true},
       {key:'crewId',label:'Crew',type:'select',deps:'shop',options:v=>[{value:'',label:'Unassigned'},...crewsFor(v.shop).map(c=>({value:c.id,label:c.name||''}))],half:true},
+      {key:'link',label:'For',type:'select',options:linkOpts(j),hint:'Tie it to a field project and it shows on that project’s page. Counter orders get their own section on the shop tab.'},
       {key:'project',label:'Project / customer',placeholder:'e.g. Rec center perimeter fence'},
       {key:'item',label:'What is being built',placeholder:'e.g. 8 ft picket panels, 4 ft walk gate'},
       {key:'target',label:'Quantity to make',type:'number',inputmode:'decimal',min:'0',step:'0.5',placeholder:'e.g. 24',half:true,hint:'Sets the progress bar. Leave blank for no bar.'},
@@ -1276,14 +1342,25 @@ function openJob(j){
       const now=new Date().toISOString();
       const target=Number(v.target)>0?Number(v.target):0;
       const done=isNew?0:Math.max(0,Number(v.done)||0);
-      const data=stamp({shop:v.shop,crewId:v.crewId,project:v.project,item:v.item,qty:'',target:target,unit:UNITS[v.unit]?v.unit:'pcs',done:target?done:0,log:Array.isArray(j.log)?j.log:[],due:v.due,stage:v.stage,note:v.note,createdAt:j.createdAt||now,doneAt:v.stage==='done'?(j.doneAt||now):''});
+      const data=stamp({shop:v.shop,crewId:v.crewId,project:v.project,item:v.item,qty:'',target:target,unit:UNITS[v.unit]?v.unit:'pcs',done:target?done:0,log:Array.isArray(j.log)?j.log:[],due:v.due,stage:v.stage,note:v.note,createdAt:j.createdAt||now,doneAt:v.stage==='done'?(j.doneAt||now):'',
+        kind:v.link==='otc'?'otc':v.link==='res'?'res':'project',fieldJobId:v.link.startsWith('p:')?v.link.slice(2):''});
       if(!isNew&&target&&done!==num(j.done)) data.log=[...data.log,{n:done,set:true,by:S.name||'',at:now,note:'corrected in Edit job'}];
       if(j.example) data.example=true;
       return isNew?addDocTo('jobs',data):setDocAt('jobs',j.id,data);
     },
     onDelete:isNew?null:()=>deleteJob(j)
   });
+  /* picking a project fills in the name if it is still blank */
+  const ln=$('f_link'), pj=$('f_project');
+  if(ln&&pj) ln.addEventListener('change',()=>{ const f=ln.value.startsWith('p:')?fjob(ln.value.slice(2)):null; if(f&&!pj.value.trim()) pj.value=f.name||''; });
 }
+function linkOpts(j){
+  const cur=j.fieldJobId||'';
+  const open=S.fieldJobs.filter(f=>fstage(f).id!=='closed'||f.id===cur).sort((a,b)=>(a.name||'').localeCompare(b.name||''));
+  return [{value:'',label:'Project work (not tied to a field project)'},{value:'otc',label:'Over the counter'},{value:'res',label:'Residential'},...open.map(f=>({value:'p:'+f.id,label:f.name||'(no name)'}))];
+}
+function isOtc(j){ return j.kind==='otc'; }
+function notOtc(j){ return j.kind!=='otc'; }
 function openCrew(c){
   const isNew=!c.id;
   openSheet({
@@ -1564,94 +1641,17 @@ function fieldCard(j){
   const pors=portionsFor(j.id);
   pors.slice(0,3).forEach(p=>card.append(miniPortion(p)));
   if(pors.length>3) card.append(h('div',{class:'quiet',text:'+'+(pors.length-3)+' more'}));
+  const sj=shopJobsFor(j.id).filter(x=>x.stage!=='done');
+  const dg=digOf(j);
+  const flags=h('div',{class:'cflags'});
+  if(sj.length) flags.append(h('span',{class:'fchip',text:'In the shop · '+sj.length}));
+  if((st.id==='ready'||st.id==='install')&&(dg.status==='needed'||dg.status==='called'||dg.status==='notclear')) flags.append(h('span',{class:'fchip '+DIG_CLS[dg.status]},h('span',{class:'k',text:'Dig'}),DIG[dg.status]));
   const n=ffilesFor(j.id).length;
-  if(n) card.append(h('span',{class:'attc'},clip(),String(n)));
+  if(n) flags.append(h('span',{class:'attc'},clip(),String(n)));
+  if(flags.childElementCount) card.append(flags);
   const nx=FSTAGES[st.i+1];
   if(nx) card.append(h('div',{class:'cacts ed'},h('button',{class:'btn sm',type:'button',text:'Move to '+nx.label+' ›',onclick:ev=>{ ev.stopPropagation(); setFieldStage(j,nx.id); }})));
   return card;
-}
-
-/* A project's own page: stage, the basics, its portions, who is on site, and its drawings. */
-function renderFieldJob(id){
-  const j=fjob(id);
-  const back=h('div',{},h('button',{class:'btn sm',type:'button',text:'‹ Job board',onclick:closeFieldPage}));
-  if(!j) return h('section',{class:'fj'},back,h('div',{class:'empty'},h('h3',{text:'Project not found'}),h('p',{text:'It may have been deleted, or the link is an old one.'})));
-  const st=fstage(j), today=todayStr();
-  const wrap=h('section',{class:'fj st-'+st.id});
-  wrap.append(back);
-  wrap.append(h('div',{class:'fjh'},h('h2',{text:j.name||'(no name)'}),fDateChip(j),
-    h('div',{class:'acts ed'},h('button',{class:'btn sm',type:'button',text:'Edit project',onclick:()=>openFieldJobForm(j)}))));
-
-  const steps=h('div',{class:'steps',role:'group','aria-label':'Stage'});
-  FSTAGES.forEach(s=>{
-    const cls='step st-'+s.id+(s.i<st.i?' past':s.i===st.i?' cur':'');
-    steps.append(S.editing
-      ?h('button',{class:cls,type:'button',title:'Move to '+s.label,'aria-pressed':s.i===st.i?'true':'false',text:s.label,onclick:()=>setFieldStage(j,s.id)})
-      :h('span',{class:cls,text:s.label}));
-  });
-  wrap.append(steps);
-  if(j.next) wrap.append(h('div',{class:'fnext',text:j.next}));
-
-  const lead=fcrew(j.crewId);
-  const info=h('dl',{class:'finfo'});
-  const row=(k,v)=>info.append(h('div',{},h('dt',{text:k}),h('dd',{},v||'—')));
-  row('Customer / GC',j.customer);
-  row('Location',j.location?h('a',{href:'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(j.location),target:'_blank',rel:'noopener',text:j.location}):'');
-  row('Job #',j.jobNo);
-  row('Project manager',j.pm);
-  row('Foreman / crew',lead?fcrewName(lead)+(lead.lead&&lead.lead!==lead.name?' · '+lead.lead:''):'');
-  row('Start on site',j.start?fmtDayY(j.start):'');
-  row('Finish by',j.finish?fmtDayY(j.finish):'');
-  wrap.append(info);
-
-  const pors=portionsFor(j.id);
-  const psec=h('div',{class:'fsec'},h('div',{class:'fsech'},h('h3',{text:'Portions of the project'}),
-    h('button',{class:'btn sm pri ed',type:'button',text:'+ Portion',onclick:()=>openPortion({},j)})));
-  if(pors.length){ const list=h('div',{class:'plist'}); pors.forEach(p=>list.append(portionRow(p,j))); psec.append(list); }
-  else psec.append(h('div',{class:'quiet',text:'Nothing broken out yet. Add each portion of the job and track it on its own.'}));
-  wrap.append(psec);
-
-  const days=Object.keys(j.days||{}).filter(d=>crewsOn(j,d).length).sort();
-  const past=days.filter(d=>d<today), up=days.filter(d=>d>=today);
-  const csec=h('div',{class:'fsec'},h('div',{class:'fsech'},h('h3',{text:'Crew on site'}),
-    h('button',{class:'btn sm ed',type:'button',text:'+ Schedule crew',onclick:()=>openJobDay(j,null)})));
-  if(up.length){
-    const dl=h('div',{class:'dlist'});
-    up.slice(0,12).forEach(d=>dl.append(h('div',{class:'drow'+(d===today?' today':'')},
-      h('span',{class:'d',text:d===today?'Today':fmtDay(d)}),
-      h('span',{class:'c',text:crewsOn(j,d).map(c=>fcrewName(fcrew(c))).join(', ')}),
-      h('button',{class:'btn sm ed',type:'button',text:'Change',onclick:()=>openJobDay(j,d)}))));
-    csec.append(dl);
-    if(up.length>12) csec.append(h('div',{class:'quiet',text:'+'+(up.length-12)+' more days scheduled'}));
-  } else csec.append(h('div',{class:'quiet',text:S.fieldCrews.length?'No crew scheduled from today on.':'No field crews set up yet. Add them on the Field tab (+ Field crew), then schedule them here or on the Crew schedule.'}));
-  if(past.length){ const cd=past.reduce((n,d)=>n+crewsOn(j,d).length,0); csec.append(h('div',{class:'quiet',text:cd+' crew-day'+(cd===1?'':'s')+' on site before today · first day '+fmtDayY(past[0])})); }
-  wrap.append(csec);
-
-  const files=ffilesFor(j.id);
-  const fsec=h('div',{class:'fsec'},h('div',{class:'fsech'},h('h3',{text:'Drawings & paperwork'}),
-    h('button',{class:'btn sm ed',type:'button',text:'Attach',onclick:()=>pickFile({id:j.id,shop:'field'},'fieldFiles')})));
-  if(files.length){
-    const atts=h('div',{class:'atts'});
-    files.forEach(f=>atts.append(h('button',{class:'att',type:'button',title:f.name||'',onclick:()=>openViewer(f)},clip(),h('span',{class:'nm',text:f.name||'file'}))));
-    fsec.append(atts);
-  } else fsec.append(h('div',{class:'quiet',text:'Nothing attached. PDFs or photos, up to 12 MB each.'}));
-  wrap.append(fsec);
-
-  if(j.note) wrap.append(h('div',{class:'fsec'},h('div',{class:'fsech'},h('h3',{text:'Notes'})),h('p',{class:'fnote',text:j.note})));
-  return wrap;
-}
-function portionRow(p,j){
-  const cls=p.status==='install'?'active':p.status==='done'?'done':'queued';
-  const row=h('div',{class:'job '+cls});
-  row.append(h('div',{class:'p',text:p.name||'(portion)'}));
-  row.append(h('span',{class:'due'+(p.status==='done'?' ok':''),text:PSTATUS[p.status]||PSTATUS.none}));
-  if(p.note) row.append(h('div',{class:'n',text:p.note}));
-  const bar=progressBar(p,'installed'); if(bar) row.append(bar);
-  const acts=h('div',{class:'jacts'});
-  if(hasTarget(p)&&p.status!=='done') acts.append(h('button',{class:'btn sm cr',type:'button',text:'+ Progress',onclick:()=>postPortion(p,j)}));
-  acts.append(h('button',{class:'btn sm ed',type:'button',text:'Edit',onclick:()=>openPortion(p,j)}));
-  row.append(acts);
-  return row;
 }
 
 /* Crews × days for one week. Tap a job to open its page; in Edit, each cell can be assigned. */
@@ -1721,53 +1721,15 @@ async function deleteFieldJob(j,quiet){
   for(const p of portionsFor(j.id)){ if(!(await delDocAt('fieldPortions',p.id))) return false; }
   return delDocAt('fieldJobs',j.id);
 }
-function openFieldJobForm(j){
-  const isNew=!j.id;
-  openSheet({
-    title:isNew?'New project':'Edit project',
-    values:{name:j.name||'',customer:j.customer||'',jobNo:j.jobNo||'',location:j.location||'',pm:isNew?(S.name||''):(j.pm||''),crewId:j.crewId||'',stage:j.stage||'awarded',start:j.start||'',finish:j.finish||'',next:j.next||'',note:j.note||''},
-    fields:[
-      {key:'name',label:'Project',placeholder:'e.g. Rec center perimeter fence'},
-      {key:'customer',label:'Customer / GC',half:true},
-      {key:'jobNo',label:'Job #',half:true},
-      {key:'location',label:'Location',placeholder:'Street address or site, town'},
-      {key:'pm',label:'Project manager',half:true,autocomplete:'off'},
-      {key:'crewId',label:'Foreman / crew',type:'select',half:true,options:[{value:'',label:'Not assigned'},...fcrewsSorted().map(c=>({value:c.id,label:fcrewName(c)}))]},
-      {key:'stage',label:'Stage',type:'select',options:FSTAGES.map(s=>({value:s.id,label:s.label}))},
-      {key:'start',label:'Start on site',type:'date',half:true},
-      {key:'finish',label:'Finish by',type:'date',half:true},
-      {key:'next',label:'Next step / waiting on',placeholder:'e.g. Waiting on approved shop drawings'},
-      {key:'note',label:'Notes',type:'textarea',placeholder:'Site contact, access, working hours…'}
-    ],
-    onSave:async v=>{
-      if(!v.name){ toast('Give the project a name.'); return false; }
-      const now=new Date().toISOString();
-      const stage=FSTAGE_BY[v.stage]?v.stage:'awarded';
-      const data=stamp({name:v.name,customer:v.customer,jobNo:v.jobNo,location:v.location,pm:v.pm,crewId:v.crewId,stage:stage,start:v.start,finish:v.finish,next:v.next,note:v.note,createdAt:j.createdAt||now,closedAt:stage==='closed'?(j.closedAt||now):''});
-      /* an example renamed into a real project stops being an example, so Remove example data leaves it alone */
-      if(j.example) data.example=/^EXAMPLE/i.test(v.name);
-      /* merge, so the crew days already on the project are kept */
-      if(!isNew) return mergeDocAt('fieldJobs',j.id,data);
-      data.days={};
-      if(!S.db) return false;
-      try{ const ref=await addDoc(collection(S.db,'fieldJobs'),data); openFieldPage(ref.id); return true; }
-      catch(e){ writeErr(e); return false; }
-    },
-    onDelete:isNew?null:()=>deleteFieldJob(j)
-  });
-  /* offer the PM names already on the board, so the PM filter doesn't split on spelling */
-  const pms=[...new Set(S.fieldJobs.map(x=>(x.pm||'').trim()).filter(Boolean))];
-  const inp=$('f_pm');
-  if(inp&&pms.length){ inp.setAttribute('list','pmlist'); $('sheet').append(h('datalist',{id:'pmlist'},pms.map(p=>h('option',{value:p})))); }
-}
 function openPortion(p,j){
   const isNew=!p.id;
   openSheet({
     title:isNew?'New portion':'Edit portion',
     intro:j.name||'',
-    values:{name:p.name||'',target:hasTarget(p)?fmtN(p.target):'',unit:FUNITS[p.unit]?p.unit:'lf',done:hasTarget(p)?fmtN(p.done):'',status:PSTATUS[p.status]?p.status:'none',note:p.note||''},
+    values:{name:p.name||'',item:p.item||'',target:hasTarget(p)?fmtN(p.target):'',unit:FUNITS[p.unit]?p.unit:'lf',done:hasTarget(p)?fmtN(p.done):'',status:PSTATUS[p.status]?p.status:'none',note:p.note||''},
     fields:[
       {key:'name',label:'Portion of the project',placeholder:'e.g. 8 ft chain link perimeter, double swing gate'},
+      {key:'item',label:'Bid item # (optional)',half:true,autocomplete:'off',placeholder:'e.g. 12A'},
       {key:'target',label:'Quantity',type:'number',inputmode:'decimal',min:'0',step:'0.5',half:true,hint:'Sets the progress bar. Leave blank for no bar.'},
       {key:'unit',label:'Measured in',type:'select',half:true,options:Object.entries(FUNITS).map(([v,u])=>({value:v,label:u.long+' ('+u.short+')'}))},
       isNew?null:{key:'done',label:'Installed so far',type:'number',inputmode:'decimal',min:'0',step:'0.5',half:true,hint:'Correct the total here if an entry was wrong.'},
@@ -1783,7 +1745,7 @@ function openPortion(p,j){
       const cur=isNew?p:(S.fieldPortions.find(x=>x.id===p.id)||p);
       const fixed=!isNew&&v.done!==(hasTarget(p)?fmtN(p.done):'');
       const done=isNew?0:(fixed?Math.max(0,Number(v.done)||0):num(cur.done));
-      const data=stamp({jobId:j.id,name:v.name,target:target,unit:FUNITS[v.unit]?v.unit:'lf',done:target?done:0,log:Array.isArray(cur.log)?cur.log:[],status:PSTATUS[v.status]?v.status:'none',note:v.note,createdAt:p.createdAt||now});
+      const data=stamp({jobId:j.id,name:v.name,item:v.item,target:target,unit:FUNITS[v.unit]?v.unit:'lf',done:target?done:0,log:Array.isArray(cur.log)?cur.log:[],status:PSTATUS[v.status]?v.status:'none',note:v.note,createdAt:p.createdAt||now});
       if(fixed&&target) data.log=[...data.log,{n:done,set:true,by:S.name||'',at:now,note:'corrected in Edit portion'}];
       if(j.example) data.example=true;
       return isNew?addDocTo('fieldPortions',data):setDocAt('fieldPortions',p.id,data);
@@ -1882,6 +1844,363 @@ function openJobDay(j,date){
   if(di) di.addEventListener('change',()=>{ if(parseDay(di.value)) list.set(crewsOn(j,di.value)); });
 }
 
+/* ---------- field: project page ---------- */
+const LABOR={open:'Open shop',pw:'Prevailing wage',union:'Union'};
+const DIG={na:'Not needed',needed:'Needs ticket',called:'Called in',clear:'Clear',notclear:'Not clear'};
+const DIG_CLS={clear:'ok',called:'warn',needed:'warn',notclear:'bad',na:''};
+const PAPER=[{id:'submittals',label:'Submittals'},{id:'shopdwg',label:'Shop drawings'},{id:'jha',label:'JHA'},{id:'insurance',label:'Insurance'},{id:'permits',label:'Permits'}];
+const PAPER_ST={none:'Not started',submitted:'Submitted',approved:'Approved',rejected:'Rejected',na:'Not needed'};
+const PAPER_CLS={approved:'ok',submitted:'warn',rejected:'bad',none:'',na:''};
+const FKINDS=[{id:'shop',label:'Approved shop drawings'},{id:'contract',label:'Contract / layout drawings'},{id:'other',label:'Other paperwork & photos'}];
+function digOf(j){ const d=(j&&j.dig&&typeof j.dig==='object')?j.dig:{}; return {status:DIG[d.status]?d.status:'na',ticket:d.ticket||'',called:d.called||'',expires:d.expires||''}; }
+function paperOf(j,id){ const p=(j&&j.paperwork&&j.paperwork[id])||{}; return {status:PAPER_ST[p.status]?p.status:'none',date:p.date||''}; }
+function contactsOf(j){ return Array.isArray(j.contacts)?j.contacts.filter(c=>c&&typeof c==='object'):[]; }
+function logOf(j){ const l=Array.isArray(j.log)?j.log.filter(e=>e&&typeof e==='object'):[]; return l.sort((a,b)=>(b.at||'')<(a.at||'')?-1:1); }
+function telHref(p){ const d=String(p||'').replace(/[^\d+]/g,''); return d?'tel:'+d:null; }
+function mapsUrl(loc){ return 'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(loc); }
+function shopJobsFor(jobId){ const rank={active:0,hold:1,queued:2,done:3}; return S.jobs.filter(x=>x.fieldJobId===jobId).sort((a,b)=>(rank[a.stage]??4)-(rank[b.stage]??4)||jobSort(a,b)); }
+function digChip(j,editable){
+  const d=digOf(j);
+  if(d.status==='na'&&!editable) return null;
+  const cls='fchip '+(DIG_CLS[d.status]||'');
+  const kids=[h('span',{class:'k',text:'Dig ticket'}),DIG[d.status]+(d.ticket&&d.status!=='na'?' · #'+d.ticket:'')];
+  return editable?h('button',{class:cls,type:'button',onclick:()=>openPaperwork(j)},kids):h('span',{class:cls},kids);
+}
+function laborChip(j,editable){
+  if(!LABOR[j.labor]&&!editable) return null;
+  const kids=[h('span',{class:'k',text:'Labor'}),LABOR[j.labor]||'not set'];
+  return editable?h('button',{class:'fchip',type:'button',onclick:()=>openFieldJobForm(j)},kids):h('span',{class:'fchip'},kids);
+}
+function shopStageChip(x){
+  if(x.stage==='done') return h('span',{class:'due ok',text:'Finished'});
+  if(x.stage==='active') return h('span',{class:'due ok',text:'Working now'});
+  if(x.stage==='hold') return h('span',{class:'due warn',text:'On hold'});
+  return dueChip(x)||h('span',{class:'due',text:'Coming up'});
+}
+/* The project page, top to bottom in the order a foreman's packet goes: who and where, what we are doing, what is built and ready, who is on site, the drawings, and the running log. */
+function renderFieldJob(id){
+  const j=fjob(id);
+  const back=h('div',{},h('button',{class:'btn sm',type:'button',text:'‹ Job board',onclick:closeFieldPage}));
+  if(!j) return h('section',{class:'fj'},back,h('div',{class:'empty'},h('h3',{text:'Project not found'}),h('p',{text:'It may have been deleted, or the link is an old one.'})));
+  const st=fstage(j), today=todayStr(), ed=S.editing;
+  const wrap=h('section',{class:'fj st-'+st.id});
+  wrap.append(back);
+  wrap.append(h('div',{class:'fjh'},h('h2',{text:j.name||'(no name)'}),fDateChip(j),
+    h('div',{class:'acts'},
+      h('button',{class:'btn sm',type:'button',text:'Print cover sheet',onclick:()=>printCoverSheet(j)}),
+      h('button',{class:'btn sm ed',type:'button',text:'Edit project',onclick:()=>openFieldJobForm(j)}))));
+
+  const steps=h('div',{class:'steps',role:'group','aria-label':'Stage'});
+  FSTAGES.forEach(s=>{
+    const cls='step st-'+s.id+(s.i<st.i?' past':s.i===st.i?' cur':'');
+    steps.append(ed
+      ?h('button',{class:cls,type:'button',title:'Move to '+s.label,'aria-pressed':s.i===st.i?'true':'false',text:s.label,onclick:()=>setFieldStage(j,s.id)})
+      :h('span',{class:cls,text:s.label}));
+  });
+  wrap.append(steps);
+  const chips=h('div',{class:'fchips'},laborChip(j,ed),digChip(j,ed));
+  if(chips.childElementCount) wrap.append(chips);
+  if(j.next) wrap.append(h('div',{class:'fnext',text:j.next}));
+
+  const lead=fcrew(j.crewId);
+  const info=h('dl',{class:'finfo'});
+  const row=(k,v)=>info.append(h('div',{},h('dt',{text:k}),h('dd',{},v||'—')));
+  row('Customer / GC',j.customer);
+  row('Location',j.location?h('a',{href:mapsUrl(j.location),target:'_blank',rel:'noopener',text:j.location}):'');
+  if(isOffice()) row('Job #',j.jobNo);
+  row('Project manager',j.pm);
+  row('Foreman / crew',lead?fcrewName(lead)+(lead.lead&&lead.lead!==lead.name?' · '+lead.lead:''):'');
+  row('Start on site',j.start?fmtDayY(j.start):'');
+  row('Finish by',j.finish?fmtDayY(j.finish):'');
+  wrap.append(info);
+
+  /* contacts */
+  const cons=contactsOf(j);
+  const csec0=h('div',{class:'fsec'},h('div',{class:'fsech'},h('h3',{text:'Contacts'}),
+    h('button',{class:'btn sm ed',type:'button',text:'+ Contact',onclick:()=>openContact(j,-1)})));
+  if(cons.length){
+    const list=h('div',{class:'clist'});
+    cons.forEach((c,i)=>{
+      const tel=telHref(c.phone);
+      const r=h('div',{class:'crow'},h('span',{class:'nm',text:c.name||'(no name)'}),
+        tel?h('a',{class:'ph',href:tel,text:c.phone}):(c.phone?h('span',{class:'ph',text:c.phone}):h('span')),
+        h('span',{class:'rl',text:[c.role,c.email].filter(Boolean).join(' · ')}));
+      if(ed) r.append(h('button',{class:'btn sm',type:'button',text:'Edit',onclick:()=>openContact(j,i)}));
+      list.append(r);
+    });
+    csec0.append(list);
+  } else csec0.append(h('div',{class:'quiet',text:'No contacts yet. GC super, GC PM, site contact, inspector.'}));
+  wrap.append(csec0);
+
+  /* scope */
+  if(j.scope||ed) wrap.append(h('div',{class:'fsec'},h('div',{class:'fsech'},h('h3',{text:'Scope of work'})),
+    j.scope?h('p',{class:'fnote',text:j.scope}):h('div',{class:'quiet',text:'Not written yet. Edit project → Scope of work. Useful when we are only installing part of the project.'})));
+
+  /* portions */
+  const pors=portionsFor(j.id);
+  const psec=h('div',{class:'fsec'},h('div',{class:'fsech'},h('h3',{text:'Portions of the project'}),
+    h('button',{class:'btn sm pri ed',type:'button',text:'+ Portion',onclick:()=>openPortion({},j)})));
+  if(pors.length){ const list=h('div',{class:'plist'}); pors.forEach(p=>list.append(portionRow(p,j))); psec.append(list); }
+  else psec.append(h('div',{class:'quiet',text:'Nothing broken out yet. Add each portion of the job and track it on its own.'}));
+  wrap.append(psec);
+
+  /* in the shop */
+  const sj=shopJobsFor(j.id);
+  const ssec=h('div',{class:'fsec'},h('div',{class:'fsech'},h('h3',{text:'In the shop'})));
+  if(sj.length){
+    const list=h('div',{class:'plist'});
+    sj.forEach(x=>{
+      const r=h('div',{class:'job '+(x.stage||''),role:'button',tabindex:'0',title:'Open the '+((SHOP_BY[x.shop]||{}).name||'shop')+' tab',onclick:()=>setTab(x.shop)});
+      r.append(h('div',{class:'p',text:x.item||x.project||'(job)'}));
+      r.append(shopStageChip(x));
+      r.append(h('div',{class:'i',text:[(SHOP_BY[x.shop]||{}).name,crewName(x.crewId),hasTarget(x)?null:(x.qty?'× '+x.qty:null)].filter(Boolean).join(' · ')}));
+      if(x.note) r.append(h('div',{class:'n',text:x.note}));
+      const bar=progressBar(x); if(bar) r.append(bar);
+      list.append(r);
+    });
+    ssec.append(list);
+  } else ssec.append(h('div',{class:'quiet',text:'No shop jobs tied to this project. On a shop tab, Edit a job and set "For" to this project.'}));
+  wrap.append(ssec);
+
+  /* paperwork */
+  const d=digOf(j);
+  const wsec=h('div',{class:'fsec'},h('div',{class:'fsech'},h('h3',{text:'Paperwork'}),
+    h('button',{class:'btn sm ed',type:'button',text:'Edit paperwork',onclick:()=>openPaperwork(j)})));
+  const pg=h('div',{class:'pgrid'});
+  PAPER.forEach(it=>{ const p=paperOf(j,it.id);
+    pg.append(h('div',{class:'prow'},h('span',{class:'lb',text:it.label}),h('span',{class:'due '+(PAPER_CLS[p.status]||''),text:PAPER_ST[p.status]}),h('span',{class:'dt',text:p.date?fmtDayY(p.date):''}))); });
+  const dsub=[d.ticket?'#'+d.ticket:'',d.called?'called '+fmtDayY(d.called):'',d.expires?'expires '+fmtDayY(d.expires):''].filter(Boolean).join(' · ');
+  pg.append(h('div',{class:'prow'},h('span',{class:'lb',text:'Dig ticket'}),h('span',{class:'due '+(DIG_CLS[d.status]||''),text:DIG[d.status]}),h('span',{class:'dt',text:d.status==='na'?'':dsub})));
+  wsec.append(pg);
+  wrap.append(wsec);
+
+  /* drawings, by kind */
+  const files=ffilesFor(j.id);
+  const dsec=h('div',{class:'fsec'},h('div',{class:'fsech'},h('h3',{text:'Drawings & paperwork'})));
+  const groups=h('div',{class:'dgroups'});
+  FKINDS.forEach(k=>{
+    const mine=files.filter(f=>(FKINDS.some(x=>x.id===f.kind)?f.kind:'other')===k.id);
+    const g=h('div',{class:'dgroup'},h('h4',{},k.label,h('button',{class:'btn sm ed',type:'button',text:'Attach',onclick:()=>pickFile({id:j.id,shop:'field'},'fieldFiles',{kind:k.id})})));
+    if(mine.length){ const atts=h('div',{class:'atts'}); mine.forEach(f=>atts.append(h('button',{class:'att',type:'button',title:f.name||'',onclick:()=>openViewer(f)},clip(),h('span',{class:'nm',text:f.name||'file'})))); g.append(atts); }
+    else g.append(h('div',{class:'quiet',text:'None'}));
+    groups.append(g);
+  });
+  dsec.append(groups);
+  wrap.append(dsec);
+
+  /* crew on site */
+  const days=Object.keys(j.days||{}).filter(x=>crewsOn(j,x).length).sort();
+  const past=days.filter(x=>x<today), up=days.filter(x=>x>=today);
+  const csec=h('div',{class:'fsec'},h('div',{class:'fsech'},h('h3',{text:'Crew on site'}),
+    h('button',{class:'btn sm ed',type:'button',text:'+ Schedule crew',onclick:()=>openJobDay(j,null)})));
+  if(up.length){
+    const dl=h('div',{class:'dlist'});
+    up.slice(0,12).forEach(x=>dl.append(h('div',{class:'drow'+(x===today?' today':'')},
+      h('span',{class:'d',text:x===today?'Today':fmtDay(x)}),
+      h('span',{class:'c',text:crewsOn(j,x).map(c=>fcrewName(fcrew(c))).join(', ')}),
+      h('button',{class:'btn sm ed',type:'button',text:'Change',onclick:()=>openJobDay(j,x)}))));
+    csec.append(dl);
+    if(up.length>12) csec.append(h('div',{class:'quiet',text:'+'+(up.length-12)+' more days scheduled'}));
+  } else csec.append(h('div',{class:'quiet',text:S.fieldCrews.length?'No crew scheduled from today on.':'No field crews set up yet. Add them on the Field tab (+ Field crew), then schedule them here or on the Crew schedule.'}));
+  if(past.length){ const cd=past.reduce((n,x)=>n+crewsOn(j,x).length,0); csec.append(h('div',{class:'quiet',text:cd+' crew-day'+(cd===1?'':'s')+' on site before today · first day '+fmtDayY(past[0])})); }
+  wrap.append(csec);
+
+  /* site notes */
+  if(j.siteNotes||ed) wrap.append(h('div',{class:'fsec'},h('div',{class:'fsech'},h('h3',{text:'Site notes'})),
+    j.siteNotes?h('p',{class:'fnote',text:j.siteNotes}):h('div',{class:'quiet',text:'Hours, access, parking, safety requirements. Edit project → Site notes.'})));
+
+  /* log */
+  const log=logOf(j);
+  const lsec=h('div',{class:'fsec'},h('div',{class:'fsech'},h('h3',{text:'Log'}),
+    h('button',{class:'btn sm ed',type:'button',text:'+ Log entry',onclick:()=>openLogEntry(j)})));
+  if(log.length||j.note){
+    const list=h('div',{class:'loglist'});
+    log.forEach(e=>{
+      const r=h('div',{class:'lrow'},h('span',{class:'w',text:[e.at?isoDay(e.at):'',e.by||''].filter(Boolean).join(' · ')}),h('span',{class:'t',text:e.text||''}));
+      if(ed) r.append(h('button',{class:'btn sm',type:'button',text:'Remove',style:'grid-column:2;justify-self:start',onclick:()=>removeLogEntry(j,e)}));
+      list.append(r);
+    });
+    if(j.note) list.append(h('div',{class:'lrow'},h('span',{class:'w',text:'Notes'}),h('span',{class:'t',text:j.note})));
+    lsec.append(list);
+  } else lsec.append(h('div',{class:'quiet',text:'Nothing logged yet. Dated entries with your name on them: "GC pushed start to Monday."'}));
+  wrap.append(lsec);
+  return wrap;
+}
+function portionRow(p,j){
+  const cls=p.status==='install'?'active':p.status==='done'?'done':'queued';
+  const row=h('div',{class:'job '+cls});
+  row.append(h('div',{class:'p',text:(p.item?'Item '+p.item+' · ':'')+(p.name||'(portion)')}));
+  row.append(h('span',{class:'due'+(p.status==='done'?' ok':''),text:PSTATUS[p.status]||PSTATUS.none}));
+  if(p.note) row.append(h('div',{class:'n',text:p.note}));
+  const bar=progressBar(p,'installed'); if(bar) row.append(bar);
+  const acts=h('div',{class:'jacts'});
+  if(hasTarget(p)&&p.status!=='done') acts.append(h('button',{class:'btn sm cr',type:'button',text:'+ Progress',onclick:()=>postPortion(p,j)}));
+  acts.append(h('button',{class:'btn sm ed',type:'button',text:'Edit',onclick:()=>openPortion(p,j)}));
+  row.append(acts);
+  return row;
+}
+
+/* ---------- field: project forms ---------- */
+function openFieldJobForm(j){
+  const isNew=!j.id;
+  openSheet({
+    title:isNew?'New project':'Edit project',
+    values:{name:j.name||'',customer:j.customer||'',jobNo:j.jobNo||'',location:j.location||'',pm:isNew?(S.name||''):(j.pm||''),crewId:j.crewId||'',stage:j.stage||'awarded',labor:LABOR[j.labor]?j.labor:'',start:j.start||'',finish:j.finish||'',next:j.next||'',scope:j.scope||'',siteNotes:j.siteNotes||''},
+    fields:[
+      {key:'name',label:'Project',placeholder:'e.g. Rec center perimeter fence'},
+      {key:'customer',label:'Customer / GC',half:true},
+      {key:'jobNo',label:'Job #',half:true,hint:'Office only. Not on the cover sheet.'},
+      {key:'location',label:'Location',placeholder:'Street address, town — becomes a map pin'},
+      {key:'pm',label:'Project manager',half:true,autocomplete:'off'},
+      {key:'crewId',label:'Foreman / crew',type:'select',half:true,options:[{value:'',label:'Not assigned'},...fcrewsSorted().map(c=>({value:c.id,label:fcrewName(c)}))]},
+      {key:'stage',label:'Stage',type:'select',half:true,options:FSTAGES.map(s=>({value:s.id,label:s.label}))},
+      {key:'labor',label:'Labor',type:'select',half:true,options:[{value:'',label:'Not set'},...Object.entries(LABOR).map(([v,l])=>({value:v,label:l}))]},
+      {key:'start',label:'Start on site',type:'date',half:true},
+      {key:'finish',label:'Finish by',type:'date',half:true},
+      {key:'next',label:'Next step / waiting on',placeholder:'e.g. Waiting on approved shop drawings'},
+      {key:'scope',label:'Scope of work',type:'textarea',placeholder:'What we are installing, and what we are not. e.g. Perimeter fence and gates only; GC does the footings.'},
+      {key:'siteNotes',label:'Site notes',type:'textarea',placeholder:'Hours, access, where to park, SST / OSHA requirements…'}
+    ],
+    onSave:async v=>{
+      if(!v.name){ toast('Give the project a name.'); return false; }
+      const now=new Date().toISOString();
+      const stage=FSTAGE_BY[v.stage]?v.stage:'awarded';
+      const data=stamp({name:v.name,customer:v.customer,jobNo:v.jobNo,location:v.location,pm:v.pm,crewId:v.crewId,stage:stage,labor:LABOR[v.labor]?v.labor:'',start:v.start,finish:v.finish,next:v.next,scope:v.scope,siteNotes:v.siteNotes,createdAt:j.createdAt||now,closedAt:stage==='closed'?(j.closedAt||now):''});
+      /* an example renamed into a real project stops being an example, so Remove example data leaves it alone */
+      if(j.example) data.example=/^EXAMPLE/i.test(v.name);
+      /* merge, so the crew days, contacts, paperwork and log already on the project are kept */
+      if(!isNew) return mergeDocAt('fieldJobs',j.id,data);
+      data.days={}; data.contacts=[]; data.paperwork={}; data.dig={status:'na',ticket:'',called:'',expires:''}; data.log=[];
+      if(!S.db) return false;
+      try{ const ref=await addDoc(collection(S.db,'fieldJobs'),data); openFieldPage(ref.id); return true; }
+      catch(e){ writeErr(e); return false; }
+    },
+    onDelete:isNew?null:()=>deleteFieldJob(j)
+  });
+  /* offer the PM names already on the board, so the PM filter doesn't split on spelling */
+  const pms=[...new Set(S.fieldJobs.map(x=>(x.pm||'').trim()).filter(Boolean))];
+  const inp=$('f_pm');
+  if(inp&&pms.length){ inp.setAttribute('list','pmlist'); $('sheet').append(h('datalist',{id:'pmlist'},pms.map(p=>h('option',{value:p})))); }
+}
+function openContact(j,idx){
+  const cons=contactsOf(j), c=idx>=0?cons[idx]:null, isNew=!c;
+  openSheet({
+    title:isNew?'New contact':'Edit contact',
+    intro:j.name||'',
+    values:{name:c?c.name||'':'',role:c?c.role||'':'',phone:c?c.phone||'':'',email:c?c.email||'':''},
+    fields:[
+      {key:'name',label:'Name'},
+      {key:'role',label:'Role',half:true,placeholder:'e.g. GC super, site contact, inspector',autocomplete:'off'},
+      {key:'phone',label:'Phone',type:'tel',half:true,inputmode:'tel',autocomplete:'off'},
+      {key:'email',label:'Email (optional)',type:'email',inputmode:'email',autocomplete:'off'}
+    ],
+    onSave:async v=>{
+      if(!v.name){ toast('Enter a name.'); return false; }
+      const entry={name:v.name,role:v.role,phone:v.phone,email:v.email};
+      const cur=contactsOf(fjob(j.id)||j);
+      const next=isNew?[...cur,entry]:cur.map((x,i)=>i===idx?entry:x);
+      return mergeDocAt('fieldJobs',j.id,stamp({contacts:next}));
+    },
+    onDelete:isNew?null:async()=>{ const cur=contactsOf(fjob(j.id)||j); return mergeDocAt('fieldJobs',j.id,stamp({contacts:cur.filter((x,i)=>i!==idx)})); },
+    deleteLabel:'Remove'
+  });
+  const rl=$('f_role');
+  if(rl){ rl.setAttribute('list','rolelist'); $('sheet').append(h('datalist',{id:'rolelist'},['GC superintendent','GC project manager','Site contact','Inspector','Owner’s rep','Engineer'].map(r=>h('option',{value:r})))); }
+}
+function openPaperwork(j){
+  const d=digOf(j);
+  const values={dig_s:d.status,dig_t:d.ticket,dig_c:d.called,dig_e:d.expires};
+  const fields=[
+    {key:'dig_s',label:'Dig ticket',type:'select',half:true,options:Object.entries(DIG).map(([v,l])=>({value:v,label:l}))},
+    {key:'dig_t',label:'Ticket #',half:true,autocomplete:'off'},
+    {key:'dig_c',label:'Called in',type:'date',half:true},
+    {key:'dig_e',label:'Expires',type:'date',half:true}
+  ];
+  for(const it of PAPER){ const p=paperOf(j,it.id); values[it.id+'_s']=p.status; values[it.id+'_d']=p.date;
+    fields.push({key:it.id+'_s',label:it.label,type:'select',half:true,options:Object.entries(PAPER_ST).map(([v,l])=>({value:v,label:l}))});
+    fields.push({key:it.id+'_d',label:'Date',type:'date',half:true}); }
+  openSheet({
+    title:'Paperwork',
+    intro:j.name||'',
+    values,fields,
+    onSave:async v=>{
+      const paperwork={}; for(const it of PAPER) paperwork[it.id]={status:PAPER_ST[v[it.id+'_s']]?v[it.id+'_s']:'none',date:v[it.id+'_d']||''};
+      const dig={status:DIG[v.dig_s]?v.dig_s:'na',ticket:v.dig_t||'',called:v.dig_c||'',expires:v.dig_e||''};
+      return mergeDocAt('fieldJobs',j.id,stamp({paperwork,dig}));
+    }
+  });
+}
+function openLogEntry(j){
+  openSheet({
+    title:'Log entry',
+    intro:j.name||'',
+    values:{text:''},
+    fields:[{key:'text',label:'What happened',type:'textarea',placeholder:'e.g. GC pushed start to Monday. Crane for the gate posts is theirs.'}],
+    saveLabel:'Post',
+    onSave:async v=>{
+      if(!v.text){ toast('Write something first.'); return false; }
+      const entry={at:new Date().toISOString(),by:S.name||'',text:v.text.slice(0,2000)};
+      return mergeDocAt('fieldJobs',j.id,stamp({log:arrayUnion(entry)}));
+    }
+  });
+}
+async function removeLogEntry(j,e){
+  if(!S.db) return;
+  try{ await setDoc(doc(S.db,'fieldJobs',j.id),stamp({log:arrayRemove(e)}),{merge:true}); }catch(err){ writeErr(err); }
+}
+
+/* ---------- field: printable cover sheet (what gets handed to the crew — no job number, no dollars) ---------- */
+function buildCoverSheet(j){
+  const sheet=h('div',{class:'cs'});
+  const d=digOf(j), lead=fcrew(j.crewId), now=new Date();
+  sheet.append(h('div',{class:'ph'},h('span',{class:'co',text:'Yaboo Fence Co.'}),h('span',{text:'Job cover sheet · printed '+(now.getMonth()+1)+'/'+now.getDate()+'/'+now.getFullYear()+(S.name?' by '+S.name:'')})));
+  sheet.append(h('h1',{text:j.name||'(no name)'}));
+  sheet.append(h('div',{class:'sub',text:[j.customer?'For '+j.customer:'',j.pm?'PM '+j.pm:''].filter(Boolean).join(' · ')}));
+  const facts=h('dl',{class:'facts'});
+  const f=(k,v)=>facts.append(h('div',{},h('dt',{text:k}),h('dd',{text:v||'—'})));
+  f('Address',j.location||'');
+  f('Foreman / crew',lead?fcrewName(lead)+(lead.lead&&lead.lead!==lead.name?' · '+lead.lead:''):'');
+  f('Labor',LABOR[j.labor]||'');
+  f('Dig ticket',DIG[d.status]+(d.status!=='na'&&d.ticket?' · #'+d.ticket:'')+(d.status!=='na'&&d.expires?' · expires '+fmtDayY(d.expires):''));
+  f('Start on site',j.start?fmtDayY(j.start):'');
+  f('Finish by',j.finish?fmtDayY(j.finish):'');
+  sheet.append(facts);
+  const cons=contactsOf(j);
+  sheet.append(h('h2',{text:'Contacts'}));
+  if(cons.length){
+    const t=h('table',{},h('thead',{},h('tr',{},h('th',{text:'Name'}),h('th',{text:'Role'}),h('th',{text:'Phone'}))));
+    const tb=h('tbody'); cons.forEach(c=>tb.append(h('tr',{},h('td',{text:c.name||''}),h('td',{text:c.role||''}),h('td',{text:c.phone||''})))); t.append(tb); sheet.append(t);
+  } else sheet.append(h('p',{class:'quiet',text:'None listed.'}));
+  sheet.append(h('h2',{text:'Scope of work'}));
+  sheet.append(h('p',{class:'note',text:j.scope||'See contract drawings.'}));
+  const pors=portionsFor(j.id);
+  if(pors.length){
+    sheet.append(h('h2',{text:'Portions of the project'}));
+    const t=h('table',{},h('thead',{},h('tr',{},h('th',{text:'Item'}),h('th',{text:'Portion'}),h('th',{text:'Quantity'}),h('th',{text:'Status'}))));
+    const tb=h('tbody'); pors.forEach(p=>tb.append(h('tr',{},h('td',{text:p.item||''}),h('td',{text:p.name||''}),h('td',{text:hasTarget(p)?fmtN(p.target)+' '+unitOf(p).short:''}),h('td',{text:PSTATUS[p.status]||PSTATUS.none})))); t.append(tb); sheet.append(t);
+  }
+  if(j.siteNotes){ sheet.append(h('h2',{text:'Site notes'})); sheet.append(h('p',{class:'note',text:j.siteNotes})); }
+  const files=ffilesFor(j.id);
+  sheet.append(h('h2',{text:'In this packet'}));
+  const pk=h('ul',{class:'pk'});
+  FKINDS.forEach(k=>{ const mine=files.filter(x=>(FKINDS.some(y=>y.id===x.kind)?x.kind:'other')===k.id); if(mine.length) pk.append(h('li',{},h('b',{text:k.label+': '}),mine.map(x=>x.name||'file').join(', '))); });
+  const pw=PAPER.map(it=>({it,p:paperOf(j,it.id)})).filter(x=>x.p.status!=='none');
+  if(pw.length) pk.append(h('li',{},h('b',{text:'Paperwork: '}),pw.map(x=>x.it.label+' '+PAPER_ST[x.p.status].toLowerCase()+(x.p.date?' '+fmtDayY(x.p.date):'')).join(' · ')));
+  if(!pk.childElementCount) pk.append(h('li',{text:'Nothing attached yet.'}));
+  sheet.append(pk);
+  sheet.append(h('h2',{text:'Notes from the field'}));
+  sheet.append(h('div',{class:'lines'}));
+  sheet.append(h('div',{class:'foot'},h('span',{text:'Yaboo Fence Co. · 95 West Nyack Way, West Nyack, NY 10994 · 845-358-0118'}),h('span',{text:'Live page: fenceman845.github.io/shop-board/#field/'+j.id})));
+  return sheet;
+}
+function printCoverSheet(j){
+  const ps=$('printsheet'); ps.replaceChildren(buildCoverSheet(j));
+  document.body.classList.add('printing');
+  const done=()=>{ document.body.classList.remove('printing'); window.removeEventListener('afterprint',done); };
+  window.addEventListener('afterprint',done);
+  setTimeout(()=>{ try{ window.print(); }catch(e){ done(); } },60);
+}
+
 /* ---------- field: examples (opt-in, flagged example:true, removed with the rest under Board settings) ---------- */
 async function loadFieldExamples(){
   if(!S.db) return;
@@ -1900,6 +2219,12 @@ async function loadFieldExamples(){
     const [A,B,C]=ids;
     const jobs=[
       {name:'EXAMPLE — Rec center perimeter fence',customer:'General contractor',location:'Bronx, NY',jobNo:'E-101',stage:'install',start:dayPlus(-6),finish:dayPlus(9),next:'',crewId:A,days:span(0,4,[A]),
+        labor:'pw',dig:{status:'clear',ticket:'EXAMPLE-1234',called:dayPlus(-9),expires:dayPlus(20)},
+        contacts:[{name:'EXAMPLE GC super',role:'GC superintendent',phone:'(555) 010-0100',email:''},{name:'EXAMPLE Parks contact',role:'Site contact',phone:'(555) 010-0101',email:''}],
+        scope:'Perimeter chain link and the three double swing gates only. GC does the gate post footings and the asphalt patch.',
+        siteNotes:'Gate B on 149th St. 7:00–3:30. OSHA 30 and SST card required on site. Park in the east lot.',
+        paperwork:{submittals:{status:'approved',date:dayPlus(-30)},shopdwg:{status:'approved',date:dayPlus(-21)},jha:{status:'approved',date:dayPlus(-10)},insurance:{status:'approved',date:dayPlus(-35)},permits:{status:'na',date:''}},
+        log:[{at:now,by:'EXAMPLE',text:'GC pushed the gate hardware delivery to next week; perimeter keeps going.'}],
         portions:[{name:'8 ft chain link perimeter',target:1240,unit:'lf',done:680,status:'install'},{name:'Double swing gates',target:3,unit:'ea',done:1,status:'install'},{name:'Privacy slats',target:400,unit:'lf',done:0,status:'none'}]},
       {name:'EXAMPLE — Station platform railing',customer:'Transit agency',location:'Brooklyn, NY',jobNo:'E-102',stage:'install',start:dayPlus(-2),finish:dayPlus(12),next:'Waiting on the second delivery of pickets',crewId:C,days:span(1,4,[C]),
         portions:[{name:'Core drill and set posts',target:48,unit:'ea',done:30,status:'install'},{name:'Steel picket railing',target:186,unit:'lf',done:40,status:'install'}]},
@@ -1912,7 +2237,9 @@ async function loadFieldExamples(){
       {name:'EXAMPLE — Park entrance fence',customer:'Parks department',location:'Queens, NY',jobNo:'E-105',stage:'submittals',start:'',finish:dayPlus(45),next:'Shop drawings out for approval',crewId:'',days:{},portions:[]}
     ];
     for(const j of jobs){
-      const ref=await addDoc(collection(S.db,'fieldJobs'),mk({name:j.name,customer:j.customer,location:j.location,jobNo:j.jobNo,pm:S.name||'',crewId:j.crewId,stage:j.stage,start:j.start,finish:j.finish,next:j.next,note:'',days:j.days,closedAt:''}));
+      const ref=await addDoc(collection(S.db,'fieldJobs'),mk({name:j.name,customer:j.customer,location:j.location,jobNo:j.jobNo,pm:S.name||'',crewId:j.crewId,stage:j.stage,start:j.start,finish:j.finish,next:j.next,days:j.days,closedAt:'',
+        labor:j.labor||'',dig:j.dig||{status:'na',ticket:'',called:'',expires:''},contacts:j.contacts||[],scope:j.scope||'',siteNotes:j.siteNotes||'',paperwork:j.paperwork||{},log:j.log||[]}));
+      for(const sj of S.jobs.filter(x=>x.example&&!x.fieldJobId&&x.kind!=='otc'&&(x.project||'').split('—')[1]&&j.name.includes((x.project||'').split('—')[1].trim()))) await updDocAt('jobs',sj.id,{fieldJobId:ref.id,kind:'project'});
       let n=0;
       for(const p of j.portions){
         const at=new Date(Date.now()+(n++)).toISOString();
@@ -1948,12 +2275,15 @@ async function loadExamples(){
       {shop:'weld',crew:'weld/Weld 1',project:'EXAMPLE — Cantilever slide gate',item:'26 ft gate frame',target:1,unit:'pcs',done:0,due:dayPlus(9),stage:'queued'},
       {shop:'weld',crew:'weld/Weld 2',project:'EXAMPLE — Park entrance',item:'Double swing gate 14 ft',target:2,unit:'pcs',done:2,due:dayPlus(-1),stage:'active',note:'Waiting on hinges'},
       {shop:'weld',crew:'',project:'EXAMPLE — Loading dock bollards',item:'Bollard sleeves',target:20,unit:'pcs',done:0,due:dayPlus(14),stage:'queued'},
+      {shop:'weld',crew:'weld/Weld 2',project:'EXAMPLE — Counter: J. Smith',item:'2 post caps welded, pick up Friday',target:0,unit:'pcs',done:0,due:dayPlus(3),stage:'active',kind:'otc'},
       {shop:'wood',crew:'wood/Wood crew',project:'EXAMPLE — School playground',item:'Stockade sections 6 ft',target:320,unit:'lf',done:96,due:dayPlus(4),stage:'active'},
       {shop:'yard',crew:'yard/Yard crew',project:'EXAMPLE — Truck loading',item:'Load Truck 3 for Bronx job',target:0,unit:'pcs',done:0,due:dayPlus(0),stage:'active'},
       {shop:'mech',crew:'mech/Mechanics',project:'EXAMPLE — Truck 2',item:'Brakes + inspection',target:0,unit:'pcs',done:0,due:dayPlus(2),stage:'active'},
       {shop:'mech',crew:'mech/Mechanics',project:'EXAMPLE — Auger',item:'Hydraulic hose replacement',target:0,unit:'pcs',done:0,due:dayPlus(5),stage:'hold',note:'Part on order'}
     ];
-    for(const j of jobs){ const log=j.done?[{n:j.done,set:true,by:'EXAMPLE',at:now,note:''}]:[]; await addDoc(collection(S.db,'jobs'),mk({shop:j.shop,crewId:ids[j.crew]||'',project:j.project,item:j.item,qty:'',target:j.target,unit:j.unit,done:j.done,log:log,due:j.due,stage:j.stage,note:j.note||'',doneAt:''})); }
+    for(const j of jobs){ const log=j.done?[{n:j.done,set:true,by:'EXAMPLE',at:now,note:''}]:[]; await addDoc(collection(S.db,'jobs'),mk({shop:j.shop,crewId:ids[j.crew]||'',project:j.project,item:j.item,qty:'',target:j.target,unit:j.unit,done:j.done,log:log,due:j.due,stage:j.stage,note:j.note||'',doneAt:'',kind:j.kind||'project',fieldJobId:''})); }
+    /* tie the shop examples to the field examples when both are loaded */
+    for(const sj of S.jobs.filter(x=>x.example&&!x.fieldJobId&&x.kind!=='otc')){ const key=(sj.project||'').split('—')[1]; const f=key&&S.fieldJobs.find(x=>x.example&&(x.name||'').includes(key.trim())); if(f) await updDocAt('jobs',sj.id,{fieldJobId:f.id,kind:'project'}); }
     const eq=[
       {shop:'weld',name:'Plasma table',status:'ok',note:''},
       {shop:'weld',name:'Ironworker',status:'service',note:'EXAMPLE — punch die worn'},

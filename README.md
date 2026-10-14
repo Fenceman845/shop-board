@@ -72,10 +72,18 @@ Suggested starting list: yourself (Administrator, made automatically the first t
 A separate tab at the end of the tab rail for projects out in the field. Office and administrator logins only.
 
 - **Job board.** One card per project, grouped by where it is in its life: Awarded → Submittals → Fabrication → Ready to install → Installing → Punch list → Closed out. On a wide screen the stages sit side by side; on a phone they stack with on-site work first. The chips above the board filter to one stage (Closed out lives there), and a project-manager filter appears once more than one PM has projects.
-- **Project page.** Tap a card. The page has the stage (tap a stage in Edit to move it), customer / GC, location (opens in maps), job #, PM, foreman / crew, dates, a "next step / waiting on" line, and then:
-  - **Portions of the project** — each piece of the job with its own quantity (LF or each), status and progress bar. **+ Progress** logs what was installed, the same way the shops post progress.
+- **Project page.** Tap a card. Laid out in the order of a foreman's job packet: stage (tap a stage in Edit to move it), **labor type** (open shop / prevailing wage / union) and **dig ticket** chips, customer / GC, location (opens in maps), job #, PM, foreman / crew, dates, a "next step / waiting on" line, and then:
+  - **Contacts** — name, role, phone (tap to call). GC super, GC PM, site contact, inspector.
+  - **Scope of work** — plain text, for jobs where we only install part of the project. Edit project → Scope of work.
+  - **Portions of the project** — each piece of the job with its own quantity (LF or each), optional bid item #, status and progress bar. **+ Progress** logs what was installed, the same way the shops post progress. No dollar amounts anywhere on the board.
+  - **In the shop** — the shop jobs tied to this project, with their progress bars. On a shop tab, Edit a job and set **For** to the project.
+  - **Paperwork** — submittals, shop drawings, JHA, insurance, permits, each with a status and date; the dig ticket with its number, date called, clear / not clear, and expiry. **Edit paperwork** (or tap the dig chip).
+  - **Drawings & paperwork** — attachments in three groups: approved shop drawings, contract / layout drawings, other. Same limits as shop attachments.
   - **Crew on site** — the days crews are scheduled on the job, and the crew-days already spent.
-  - **Drawings & paperwork** — PDF or photo attachments, same limits as shop attachments.
+  - **Site notes** — hours, access, parking, safety requirements. Edit project → Site notes.
+  - **Log** — dated entries with the name on them (**+ Log entry**). Replaces a single notes box.
+- **Print cover sheet** (button at the top of a project page) prints a one-page letter-size sheet to hand to the crew: address, foreman, labor type, dig ticket, dates, contacts, scope, portions and quantities, site notes, what is in the packet, and lines for notes from the field. It never carries the job # or any pricing. On a phone, the share / print menu does the same.
+- **Shop jobs and the Field tab.** Every shop job has a **For** setting: project work (tied to a field project, or not), **over the counter**, or **residential**. Counter orders get their own card on the shop tab and their own block on the All shops overview, so they don't mix in with project work.
 - **Crew schedule.** The other view on the Field tab: field crews down the side, the week across the top. In Edit, **+ Assign** on a cell picks the job(s) for that crew and day, with an optional note (shop day, off, rain) and "through Friday" to fill the week. On a phone it shows one day at a time.
 - **Field crews** are their own list (+ Field crew), separate from the shop crews.
 - Each project page has its own link (`#field/<id>`), so it can be texted or bookmarked.
