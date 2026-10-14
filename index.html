@@ -1470,9 +1470,9 @@ function openBoard(){
    ========================================================================= */
 const FSTAGES=[
   {id:'awarded',label:'Awarded'},
-  {id:'submittals',label:'Submittals'},
-  {id:'fab',label:'Fabrication'},
-  {id:'ready',label:'Ready to install'},
+  {id:'submittals',label:'Paperwork & submittals'},
+  {id:'fab',label:'Material & fabrication'},
+  {id:'ready',label:'Ready to schedule'},
   {id:'install',label:'Installing'},
   {id:'punch',label:'Punch list'},
   {id:'closed',label:'Closed out'}
@@ -1481,7 +1481,7 @@ FSTAGES.forEach((s,i)=>{ s.i=i; });
 const FSTAGE_BY=Object.fromEntries(FSTAGES.map(s=>[s.id,s]));
 /* The job board lists what is on site first, then what is coming, soonest first. */
 const FBOARD_ORDER=['install','punch','ready','fab','submittals','awarded'];
-const PSTATUS={none:'Not started',fab:'Fabrication',ready:'Ready to install',install:'Installing',done:'Complete'};
+const PSTATUS={none:'Not started',fab:'Ordered / in fabrication',ready:'Ready to install',install:'Installing',done:'Complete'};
 const FUNITS={lf:{short:'LF',long:'linear feet',step:'0.5'},ea:{short:'EA',long:'each',step:'1'}};
 
 /* ---------- field: selectors ---------- */

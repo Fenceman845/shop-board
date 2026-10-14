@@ -71,7 +71,7 @@ Suggested starting list: yourself (Administrator, made automatically the first t
 
 A separate tab at the end of the tab rail for projects out in the field. Office and administrator logins only.
 
-- **Job board.** One card per project, grouped by where it is in its life: Awarded → Submittals → Fabrication → Ready to install → Installing → Punch list → Closed out. On a wide screen the stages sit side by side; on a phone they stack with on-site work first. The chips above the board filter to one stage (Closed out lives there), and a project-manager filter appears once more than one PM has projects.
+- **Job board.** One card per project, grouped by where it is in its life: Awarded → Paperwork & submittals → Material & fabrication → Ready to schedule → Installing → Punch list → Closed out. On a wide screen the stages sit side by side; on a phone they stack with on-site work first. The chips above the board filter to one stage (Closed out lives there), and a project-manager filter appears once more than one PM has projects.
 - **Project page.** Tap a card. Laid out in the order of a foreman's job packet: stage (tap a stage in Edit to move it), **labor type** (open shop / prevailing wage / union) and **dig ticket** chips, customer / GC, location (opens in maps), job #, PM, foreman / crew, dates, a "next step / waiting on" line, and then:
   - **Contacts** — name, role, phone (tap to call). GC super, GC PM, site contact, inspector.
   - **Scope of work** — plain text, for jobs where we only install part of the project. Edit project → Scope of work.
