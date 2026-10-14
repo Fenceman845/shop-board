@@ -528,7 +528,7 @@ function canField(){ return isOffice(); }
 function tabs(){ const v=visibleShops(); const t=v.length>1?['all',...v]:[...v]; if(canField()) t.push('field'); return t; }
 function canSee(shop){ return visibleShops().includes(shop); }
 const PDFJS='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/6.3.289/';
-const CHUNK=700*1024, MAX_FILE=12*1024*1024, MAX_PAGES=30;
+const CHUNK=700*1024, MAX_FILE=25*1024*1024, MAX_PAGES=30;
 
 const $=id=>document.getElementById(id);
 function h(tag,attrs,...kids){
@@ -1022,7 +1022,7 @@ async function uploadFile(job,file,col,extra){
   if(type.startsWith('image/')){ try{ blob=await shrinkImage(file); type='image/jpeg'; name=name.replace(/\.[^.]+$/,'')+'.jpg'; }catch(e){ toast('Could not read that photo.'); return; } }
   else if(type==='application/pdf'||/\.pdf$/i.test(name)){ type='application/pdf'; }
   else { toast('Attach a PDF or a photo.'); return; }
-  if(blob.size>MAX_FILE){ toast('That file is over 12 MB. Scan at 150 dpi black-and-white and try again.'); return; }
+  if(blob.size>MAX_FILE){ toast('That file is over 25 MB. In Bluebeam use Document → Reduce File Size, or scan at 150 dpi, and try again.'); return; }
   const chunks=Math.ceil(blob.size/CHUNK)||1;
   const id=doc(collection(S.db,col)).id;
   try{
